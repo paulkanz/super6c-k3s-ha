@@ -72,6 +72,31 @@ A common initial reaction to edge computing clusters utilizing the Raspberry Pi 
 | **Active Pod Capacity** | **60 to 80+ Active Pods** | Full edge multi-service orchestration (IoT, Ingress, Security, Storage). |
 | **Combined Power Draw** | **~20W Idle / ~35W–45W Full Peak Load** | Extreme thermal efficiency; operates 24/7 on low-cost battery/solar backup. |
 
+### 3.1. Bill of Materials (BOM) & Hardware Procurement Costs
+
+The physical cluster is constructed entirely from off-the-shelf commercial components, avoiding proprietary vendor lock-in. The table below outlines the capital expenditure (CapEx) required to build the fully configured 6-node DeskPi Super6C cluster:
+
+| Component | Detailed Hardware Specification | Qty | Est. Unit Cost | Extended Total |
+| :--- | :--- | :---: | :---: | :---: |
+| **DeskPi Super6C Board & Case** | Mini-ITX motherboard with integrated 6-port GbE switch, dual 40mm PWM fans, 6x aluminum heatsinks, case enclosure, and power button | 1 | $230.00 | $230.00 |
+| **Raspberry Pi CM4** | Compute Module 4, Quad-Core Cortex-A72 @ 1.5 GHz, **4GB LPDDR4 RAM**, onboard eMMC / Lite | 6 | $55.00 | $330.00 |
+| **M.2 NVMe SSDs** | 250GB M.2 2280 PCIe Gen 3/4 NVMe Solid State Drives (e.g., Kingston NV2, Crucial P3, WD Blue) | 6 | $30.00 | $180.00 |
+| **DC Power Supply** | 12V 10A (120W) regulated DC power adapter (5.5mm × 2.5mm barrel jack) or compact 12V DC-ATX converter | 1 | $35.00 | $35.00 |
+| **Accessories & Cabling** | Cat6 patch cables, micro-USB eMMC provisioning cable, internal mounting hardware | 1 set | $20.00 | $20.00 |
+| **Total Super6C Cluster Hardware (CapEx)** | **6-Node HA Kubernetes Appliance (24 Cores, 24GB RAM, 1.5TB NVMe)** | — | — | **$795.00** |
+
+#### Optional 100% Off-Grid Solar & Battery Infrastructure (CapEx)
+For remote agricultural or off-grid industrial deployments with zero local utility electricity:
+
+| Component | Detailed Specification | Qty | Est. Unit Cost | Extended Total |
+| :--- | :--- | :---: | :---: | :---: |
+| **Solar PV Array** | 300W Monocrystalline Solar Panel (or 2x 150W panels) | 1 | $200.00 | $200.00 |
+| **LiFePO4 Battery Bank** | 12V 200Ah (2,560 Wh) Grade-A LiFePO4 Battery with integrated smart BMS | 1 | $480.00 | $480.00 |
+| **Solar Charge Controller** | 100V / 30A MPPT Solar Charge Controller (>98% efficiency) | 1 | $110.00 | $110.00 |
+| **BOS & Wiring** | 10 AWG solar cables, MC4 connectors, inline DC breaker/fuse, mounting Z-brackets | 1 set | $60.00 | $60.00 |
+| **Total Off-Grid Power Plant (CapEx)** | **Complete 24/7/365 Autonomous Solar Generation & Energy Storage** | — | — | **$850.00** |
+| **Total Turnkey Off-Grid System** | **Compute Cluster + 100% Off-Grid Solar/Battery Physical Plant** | — | — | **$1,645.00** |
+
 ---
 
 ## 4. Cross-Blade Fault Tolerance & Failure Domain Isolation
@@ -195,12 +220,36 @@ To protect etcd quorum and Longhorn NVMe storage integrity during rare, extended
 
 ---
 
-### Cost & Carbon Comparison (AWS vs. Off-Grid Self-Sustaining Cluster)
+### Cost, TCO, and Payback Analysis (AWS vs. Super6C Off-Grid Cluster)
+
+Factoring in the upfront capital expenditure (CapEx) of the configured Super6C hardware ($795.00 cluster alone, or $1,645.00 turnkey with solar/battery) against equivalent cloud infrastructure and enterprise rack servers reveals substantial economic advantages:
+
+#### 1. Equivalent Cloud Footprint (AWS Monthly OpEx)
 To provision equivalent high-availability multi-node compute and replicated NVMe storage in the cloud:
-* 3x HA Control Plane instances (`t4g.medium`)
-* 3x HA Application Worker instances (`t4g.small` + 750GB gp3 EBS)
-* Managed Multi-AZ Load Balancers, NAT Gateways, and inter-AZ data transfer:
+* **3x HA Control Plane Nodes**: `t4g.medium` (2 vCPU, 4GB RAM) $\approx$ $48.00 / month
+* **3x HA Worker Nodes**: `t4g.small` (2 vCPU, 2GB RAM) $\approx$ $24.00 / month
+* **Replicated Storage Tier**: 750 GB gp3 EBS volumes across 3 Availability Zones with 3,000 IOPS / 125 MB/s $\approx$ $60.00 / month
+* **Managed Network Ingress**: Multi-AZ Application Load Balancer (ALB) $\approx$ $28.00 / month
+* **Managed NAT Gateways & Cross-AZ Egress**: 2x NAT Gateways + cross-AZ replication bandwidth $\approx$ $70.00 – $140.00 / month
+* **EKS Cluster Management Fee**: $0.10/hour $\approx$ $73.00 / month (if using managed EKS)
 
-$$\text{Estimated AWS Monthly Bill} \approx \mathbf{\$280.00 \text{ to } \$420.00 \text{ / month}}$$
+$$\text{Estimated AWS Monthly OpEx} \approx \mathbf{\$280.00 \text{ to } \$420.00 \text{ / month}}$$
 
-**Conclusion**: With **$0.00/month in utility electrical bills** and **100% off-grid solar+battery self-sufficiency**, this DeskPi Super6C cluster delivers true multi-node Raft consensus, local NVMe performance, multi-day weather autonomy, and complete operational independence.
+#### 2. Payback Horizon & Break-Even Timeline
+* **Super6C Cluster Hardware Alone ($795.00 CapEx)**:
+  $$\text{Payback Period} = \frac{\$795.00}{\$350.00/\text{mo (avg cloud)}} \approx \mathbf{2.3 \text{ months}}$$
+  *The entire 6-node cluster hardware pays for itself in less than 75 days.*
+* **Turnkey System with 100% Solar & Battery Bank ($1,645.00 Total CapEx)**:
+  $$\text{Payback Period} = \frac{\$1,645.00}{\$350.00/\text{mo (avg cloud)}} \approx \mathbf{4.7 \text{ months}}$$
+  *The entire off-grid computing installation—including solar panels, charge controller, and 200Ah battery—reaches full economic payback in under 5 months.*
+
+#### 3. 3-Year Total Cost of Ownership (TCO) Comparison
+
+| Architectural Model | Initial CapEx | Monthly Energy / OpEx | 3-Year Total Cost of Ownership (TCO) | 3-Year Net Savings |
+| :--- | :---: | :---: | :---: | :---: |
+| **AWS Cloud Architecture (Multi-AZ HA)** | $0.00 | $350.00 / mo | **$12,600.00** | Baseline |
+| **Enterprise 1U Rack Server (Dell PowerEdge R650)** | $9,500.00 | ~$65.00 / mo (utility power @ 450W) | **$11,840.00** | +$760.00 (6%) |
+| **Super6C Cluster (Grid-Tied)** | $795.00 | ~$3.50 / mo (utility power @ 35W) | **$921.00** | **$11,679.00 (93%)** |
+| **Super6C Cluster (100% Off-Grid Solar + Battery)** | **$1,645.00** | **$0.00 / mo (100% solar)** | **$1,645.00** | **$10,955.00 (87%)** |
+
+**Conclusion**: The DeskPi Super6C architecture delivers enterprise-grade 3-node Raft consensus and synchronous distributed storage at a fraction of the cost of traditional enterprise alternatives. By combining a low **$795.00 cluster hardware CapEx** with a **$0.00/month operational energy cost**, the platform achieves complete financial payback in months while providing absolute operational autonomy from both cloud service outages and rural electrical grid failures.
