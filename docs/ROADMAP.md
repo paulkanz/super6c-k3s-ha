@@ -198,7 +198,7 @@ Each roadmap item is tracked with standardized metadata to facilitate prioritiza
 ### ITEM-011: Phase 2 — Single-Tenant IoT & Telemetry Platform (ChirpStack & ThingsBoard)
 * **Target Milestone**: `Phase 2`
 * **Priority**: **P2 (Medium)**
-* **Reference**: [`docs/IOT_LORAWAN_STACK_ARCHITECTURE.md`](IOT_LORAWAN_STACK_ARCHITECTURE.md), [`docs/PHASE_2_CHIRPSTACK_THINGSBOARD_PERFORMANCE.md`](PHASE_2_CHIRPSTACK_THINGSBOARD_PERFORMANCE.md), [`docs/SDD.md`](SDD.md) §8.2.
+* **Reference**: [`docs/IOT_LORAWAN_STACK_ARCHITECTURE.md`](IOT_LORAWAN_STACK_ARCHITECTURE.md), [`docs/SDD.md`](SDD.md) §8.2.
 * **Objective**: Production telemetry ingestion supporting commercial agricultural scale (up to 4,000 active LoRaWAN sensor nodes across vineyard management blocks) hosted directly on the 6-node Super6C cluster.
 * **Technical Scope**:
   1. Deploy ChirpStack v4 Network & Application Server with Traefik Basic Station WSS ingress.

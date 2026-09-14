@@ -191,7 +191,6 @@ Real-world telemetry is captured by custom low-power SDI-12 / RS485 soil moistur
 │   ├── IOT_LORAWAN_STACK_ARCHITECTURE.md  # LoRaWAN, MQTT, ChirpStack, ThingsBoard & telemetry guide
 │   ├── LORAWAN_CAPACITY_AND_STORAGE_ANALYSIS.md # LoRaWAN gateway capacity, RF airtime & NVMe storage sizing
 │   ├── OPENWRT_ALT_PORT_ROUTING.md # Alternate port (8443) routing & legacy gateway coexistence guide
-│   ├── PHASE_2_CHIRPSTACK_THINGSBOARD_PERFORMANCE.md # Phase 2 DB performance & optimization guide
 │   ├── ROADMAP.md                 # Enhancements, compliance backlog & architectural roadmap
 │   ├── SDD.md                     # System Design Description & engineering specification
 │   ├── TRAEFIK_SECURITY_AND_RATELIMITING.md # Ingress security, rate limiting, and DDoS defense reference

@@ -410,7 +410,7 @@ To satisfy the Spec-Driven Development acceptance gate, all criteria below must 
 2. **Phase 2 — Single-Tenant IoT & Telemetry Platform (ChirpStack & ThingsBoard)**:
    - Deployment of ChirpStack v4, ThingsBoard Community Edition, and PostgreSQL 16 + TimescaleDB directly on the 6-node Super6C cluster.
    - Micro-batch ingestion pipeline (200–500 rows/insert) buffering through NATS JetStream / Mosquitto MQTT.
-   - Deep database and JVM performance optimizations (Local NVMe PVs, JIT disabled, Continuous Aggregates, 7-day Columnar Compression, and zram compressed swap). Reference: [`docs/PHASE_2_CHIRPSTACK_THINGSBOARD_PERFORMANCE.md`](PHASE_2_CHIRPSTACK_THINGSBOARD_PERFORMANCE.md) and [`docs/IOT_LORAWAN_STACK_ARCHITECTURE.md`](IOT_LORAWAN_STACK_ARCHITECTURE.md).
+   - Deep database and JVM performance optimizations (Local NVMe PVs, JIT disabled, Continuous Aggregates, 7-day Columnar Compression, and zram compressed swap). Reference: [`docs/IOT_LORAWAN_STACK_ARCHITECTURE.md`](IOT_LORAWAN_STACK_ARCHITECTURE.md).
 3. **Phase 3 — Upstream Origin Shielding**:
    - Cloudflare Free/Pro Anycast DNS and CDN proxying ("Orange Cloud") to absorb multi-gigabit volumetric Layer 3/4 DDoS attacks upstream before reaching the edge internet uplink (Fiber, Starlink, or Cellular). Reference: [`docs/OPENWRT_ALT_PORT_ROUTING.md`](OPENWRT_ALT_PORT_ROUTING.md).
 
