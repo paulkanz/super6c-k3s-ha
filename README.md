@@ -17,7 +17,7 @@ This framework delivers:
 - **Enterprise Security Hardening:** Defense-grade host and workload baseline aligned to **NIST SP 800-53 Rev 5**, **SOC 2 Type II**, and **CIS Benchmarks** (auditd 99 rules, fail2ban, umask 027, kernel blacklist, Restricted PSA).
 - **Ingress Perimeter Defense:** Traefik IP allowlisting restricting admin dashboards to LAN/VPN (`192.168.0.0/16`, `10.0.0.0/8`), cluster-wide TLS 1.2+ cipher suites, automated HTTP $\rightarrow$ HTTPS 308 redirect, and HSTS headers.
 - **Modular Playbook Design:** Clean, idempotent playbooks for hardware bootstrap, OS patching, compliance hardening, cluster installation, UI addons, and verification.
-- **IoT & Telemetry Roadmap:** Full architectural blueprint and capacity sizing for upcoming **ChirpStack v4**, **ThingsBoard CE**, and MQTT broker deployment (see [`docs/IOT_LORAWAN_STACK_ARCHITECTURE.md`](docs/IOT_LORAWAN_STACK_ARCHITECTURE.md) and [`docs/ROADMAP.md`](docs/ROADMAP.md)).
+- **IoT & Telemetry Roadmap:** Full architectural blueprint and capacity sizing for upcoming **ChirpStack v4**, **ThingsBoard CE**, and MQTT broker deployment (see [`docs/IOT_LORAWAN_STACK_ARCHITECTURE.md`](docs/IOT_LORAWAN_STACK_ARCHITECTURE.md), [`docs/LORAWAN_CAPACITY_AND_STORAGE_ANALYSIS.md`](docs/LORAWAN_CAPACITY_AND_STORAGE_ANALYSIS.md), and [`docs/ROADMAP.md`](docs/ROADMAP.md)).
 
 ---
 
@@ -189,6 +189,7 @@ Real-world telemetry is captured by custom low-power SDI-12 / RS485 soil moistur
 │   ├── CLUSTER_HARDWARE_STACK_ANALYSIS.md # 6-node Super6C cluster capacity & multi-tier stack analysis
 │   ├── COMPLIANCE.md              # Detailed mapping to NIST SP 800-53, SOC 2, and HITRUST
 │   ├── IOT_LORAWAN_STACK_ARCHITECTURE.md  # LoRaWAN, MQTT, ChirpStack, ThingsBoard & telemetry guide
+│   ├── LORAWAN_CAPACITY_AND_STORAGE_ANALYSIS.md # LoRaWAN gateway capacity, RF airtime & NVMe storage sizing
 │   ├── OPENWRT_ALT_PORT_ROUTING.md # Alternate port (8443) routing & legacy gateway coexistence guide
 │   ├── PHASE_2_CHIRPSTACK_THINGSBOARD_PERFORMANCE.md # Phase 2 DB performance & optimization guide
 │   ├── ROADMAP.md                 # Enhancements, compliance backlog & architectural roadmap

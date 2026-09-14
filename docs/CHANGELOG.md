@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **LoRaWAN Gateway Capacity, Airtime & NVMe Storage Sizing Analysis** ([`docs/LORAWAN_CAPACITY_AND_STORAGE_ANALYSIS.md`](LORAWAN_CAPACITY_AND_STORAGE_ANALYSIS.md)):
+  - Modeled physical RF airtime constraints, Time on Air (ToA), US915 FCC 400ms dwell time compliance, and uncoordinated Pure ALOHA packet collision probabilities for an 8-channel gateway.
+  - Sized data generation, monthly growth, and retention timelines for 110-byte payloads at 5-minute intervals across 500-sensor (~210 yrs compressed / ~19 yrs uncompressed) and 2,000-sensor (~53 yrs compressed / ~4.75 yrs uncompressed) fleets on a 200 GB usable NVMe storage partition.
+  - Documented Wi-Fi backhaul utilization (<40 kbps) and multi-gateway spatial scaling architectures.
+
 ### Planned
 - Automated rolling reboot with Kubernetes node drain/uncordon in maintenance playbooks.
 - Integration tests for automated Longhorn backup target (NFS/S3).

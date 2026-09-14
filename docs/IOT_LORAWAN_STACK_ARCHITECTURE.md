@@ -222,6 +222,7 @@ To evaluate the operational capacity of the cluster, we examine an enterprise-sc
    * At Spreading Factor 7 (SF7), 4,000 sensors transmit ~40-byte packets (~70ms airtime).
    * To prevent packet collisions exceeding 10%, a single 8-channel gateway reliably supports ~2,000 sensors.
    * **Requirement**: 4,000 LoRaWAN sensors require at least **2 physical 8-channel gateways** for geographic coverage and channel diversity. (Wi-Fi/Ethernet MQTT sensors have no RF duty cycle limit).
+   * *For detailed mathematical modeling of ALOHA packet collisions, FCC 400ms dwell time compliance, and 110-byte payload retention on NVMe across 500 vs. 2,000 sensors, refer to [`docs/LORAWAN_CAPACITY_AND_STORAGE_ANALYSIS.md`](LORAWAN_CAPACITY_AND_STORAGE_ANALYSIS.md).*
 
 ---
 
