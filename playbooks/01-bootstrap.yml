@@ -1,0 +1,161 @@
+---
+- name: 01 - Bootstrap Raspberry Pi CM4 Hardware and OS for K3s & Longhorn
+  hosts: k3s_cluster
+  gather_facts: true
+  become: true
+  tasks:
+    - name: Set system hostname
+      ansible.builtin.command:
+        cmd: "hostnamectl set-hostname {{ inventory_hostname }}"
+      changed_when: false
+
+    - name: Distribute cluster /etc/hosts
+      ansible.builtin.template:
+        src: ../templates/hosts.j2
+        dest: /etc/hosts
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Stop and disable legacy Docker daemon and services
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+      failed_when: false
+      loop:
+        - docker.socket
+        - docker.service
+        - containerd.service
+
+    - name: Remove legacy Docker network interfaces
+      ansible.builtin.shell: |
+        ip link set docker0 down 2>/dev/null || true
+        ip link delete docker0 2>/dev/null || true
+        ip link set docker_gwbridge down 2>/dev/null || true
+        ip link delete docker_gwbridge 2>/dev/null || true
+      changed_when: false
+      failed_when: false
+
+    - name: Permanently disable swap in current session
+      ansible.builtin.command: swapoff -a
+      changed_when: false
+
+    - name: Disable swap in /etc/fstab
+      ansible.builtin.replace:
+        path: /etc/fstab
+        regexp: '^([^#].*\s+swap\s+.*)$'
+        replace: '# \1'
+
+    - name: Stop and mask dphys-swapfile service if present
+      ansible.builtin.systemd:
+        name: dphys-swapfile
+        state: stopped
+        masked: true
+      failed_when: false
+
+    - name: Determine Raspberry Pi boot cmdline.txt location
+      ansible.builtin.stat:
+        path: /boot/firmware/cmdline.txt
+      register: rpi_cmdline_firmware
+
+    - name: Set cmdline path variable
+      ansible.builtin.set_fact:
+        rpi_cmdline_path: "{{ '/boot/firmware/cmdline.txt' if rpi_cmdline_firmware.stat.exists else '/boot/cmdline.txt' }}"
+
+    - name: Read current cmdline.txt content
+      ansible.builtin.slurp:
+        src: "{{ rpi_cmdline_path }}"
+      register: current_cmdline_raw
+
+    - name: Parse cmdline.txt string
+      ansible.builtin.set_fact:
+        current_cmdline: "{{ current_cmdline_raw.content | b64decode | trim }}"
+
+    - name: Enable cgroups in cmdline.txt for K3s container runtime
+      ansible.builtin.lineinfile:
+        path: "{{ rpi_cmdline_path }}"
+        regexp: '^((?!.*cgroup_memory=1).*)$'
+        line: "{{ current_cmdline }} cgroup_enable=cpuset cgroup_enable=memory cgroup_memory=1 swapaccount=1"
+        backrefs: true
+      register: cgroup_cmdline_update
+
+    - name: Configure kernel modules required for K3s and Longhorn
+      ansible.builtin.copy:
+        dest: /etc/modules-load.d/k3s-longhorn.conf
+        content: |
+          overlay
+          br_netfilter
+          iscsi_tcp
+          dm_crypt
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Load kernel modules immediately
+      ansible.builtin.command:
+        cmd: "modprobe {{ item }}"
+      loop:
+        - overlay
+        - br_netfilter
+        - iscsi_tcp
+        - dm_crypt
+      changed_when: false
+
+    - name: Configure sysctl settings for Kubernetes CRI and network forwarding
+      ansible.builtin.copy:
+        dest: /etc/sysctl.d/99-kubernetes-cri.conf
+        content: |
+          net.bridge.bridge-nf-call-iptables  = 1
+          net.bridge.bridge-nf-call-ip6tables = 1
+          net.ipv4.ip_forward                 = 1
+          net.ipv6.conf.all.forwarding        = 1
+          vm.overcommit_memory                = 1
+          vm.panic_on_oom                     = 0
+          kernel.panic                        = 10
+          kernel.panic_on_oops                = 1
+          fs.inotify.max_user_instances       = 8192
+          fs.inotify.max_user_watches         = 524288
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Apply sysctl parameters
+      ansible.builtin.command: sysctl --system
+      changed_when: false
+
+    - name: Install Longhorn and K3s OS dependencies
+      ansible.builtin.apt:
+        name:
+          - open-iscsi
+          - nfs-common
+          - cryptsetup
+          - dmsetup
+          - curl
+          - jq
+          - socat
+          - conntrack
+          - ipset
+          - ethtool
+          - tar
+        state: present
+        update_cache: true
+
+    - name: Enable and start iscsid daemon for Longhorn CSI
+      ansible.builtin.systemd:
+        name: iscsid
+        state: started
+        enabled: true
+
+    - name: Set noatime on root mount to preserve NVMe flash endurance
+      ansible.builtin.replace:
+        path: /etc/fstab
+        regexp: '(\s+ext4\s+)(defaults)(\s+)'
+        replace: '\1defaults,noatime\3'
+      failed_when: false
+
+    - name: Reboot node if kernel cmdline (cgroups) was modified
+      ansible.builtin.reboot:
+        msg: "Rebooting to activate memory cgroups for K3s"
+        reboot_timeout: 300
+      when: cgroup_cmdline_update.changed

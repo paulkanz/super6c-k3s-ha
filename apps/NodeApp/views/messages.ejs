@@ -1,0 +1,68 @@
+<%- include('header') %>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h4 class="mb-0 font-weight-bold text-dark">
+            <i class="fas fa-broadcast-tower text-primary mr-2"></i>LoRaWAN Uplink Packet Logs
+        </h4>
+        <p class="text-muted small mb-0">
+            Raw frame ingestion from gateway forwarders (Basic Station wss:// &amp; ChirpStack v4 integration)
+        </p>
+    </div>
+    <div>
+        <a href="/nodeapp/messages" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-sync-alt mr-1"></i>Refresh Frames
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 font-weight-bold text-dark">
+            <i class="fas fa-list-alt mr-2 text-info"></i>Recent Telemetry Ingestion Frames
+        </h5>
+        <span class="badge badge-info">Showing Last 10 Ingestion Events</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped mb-0 table-custom">
+                <thead>
+                    <tr>
+                        <th style="width: 170px;">Timestamp</th>
+                        <th style="width: 120px;">Device EUI</th>
+                        <th>Vineyard Location</th>
+                        <th style="width: 70px;">FPort</th>
+                        <th>Decoded Payload Summary</th>
+                        <th style="width: 100px;">RF Signal</th>
+                        <th style="width: 100px;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (messages && messages.length) { %>
+                        <% messages.forEach(function(msg) { %>
+                        <tr>
+                            <td class="text-muted small font-weight-bold"><%= msg.ts %></td>
+                            <td><code><%= msg.dev_eui %></code></td>
+                            <td><strong><%= msg.location %></strong></td>
+                            <td><span class="badge badge-secondary"><%= msg.fport %></span></td>
+                            <td><code><%= msg.payload_summary %></code></td>
+                            <td>
+                                <span class="badge badge-light border">
+                                    <%= msg.rssi %> dBm / <%= msg.snr %> dB
+                                </span>
+                            </td>
+                            <td><span class="badge badge-success">Ingested (ACK)</span></td>
+                        </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">No uplink frames currently recorded.</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<%- include('footer') %>

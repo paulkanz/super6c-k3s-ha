@@ -1,0 +1,319 @@
+---
+- name: 03 - Apply NIST 800-53, SOC 2, and HITRUST Security Baseline
+  hosts: k3s_cluster
+  gather_facts: true
+  become: true
+  tasks:
+    # -------------------------------------------------------------
+    # 1. Access Control & Warning (NIST AC-2, AC-3, AC-8 / SOC 2 CC6.1 / CIS 1.7, 5.4)
+    # -------------------------------------------------------------
+    - name: Deploy system use notification banner (NIST AC-8 / CIS 1.7)
+      ansible.builtin.copy:
+        dest: "{{ item }}"
+        content: |
+          *******************************************************************************
+          *                                  WARNING                                    *
+          *               UNAUTHORIZED ACCESS TO THIS SYSTEM IS PROHIBITED             *
+          * Access to this system is restricted to authorized personnel for legitimate *
+          * operational purposes only. All activities are logged and monitored. In      *
+          * accordance with NIST SP 800-53 / SOC 2 guidelines, evidence of unauthorized *
+          * access or misuse will be reported to law enforcement.                       *
+          *******************************************************************************
+        owner: root
+        group: root
+        mode: "0644"
+      loop:
+        - /etc/issue
+        - /etc/issue.net
+      when: compliance_banner_enable | default(true)
+
+    - name: Ensure sshd drop-in configuration directory exists
+      ansible.builtin.file:
+        path: /etc/ssh/sshd_config.d
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Deploy hardened SSH daemon configuration
+      ansible.builtin.copy:
+        dest: /etc/ssh/sshd_config.d/99-k3s-hardening.conf
+        content: |
+          # NIST SP 800-53 AC-2, AC-3, AC-8 Hardening
+          PermitRootLogin no
+          PasswordAuthentication no
+          PubkeyAuthentication yes
+          KbdInteractiveAuthentication no
+          ClientAliveInterval {{ ssh_client_alive_interval | default(300) }}
+          ClientAliveCountMax {{ ssh_client_alive_count_max | default(2) }}
+          X11Forwarding no
+          MaxAuthTries {{ ssh_max_auth_tries | default(4) }}
+          Banner /etc/issue.net
+        owner: root
+        group: root
+        mode: "0600"
+      register: sshd_config_status
+
+    - name: Test SSH configuration before reloading
+      ansible.builtin.command: sshd -t
+      changed_when: false
+      when: sshd_config_status.changed
+
+    - name: Restart SSH service to apply hardening
+      ansible.builtin.systemd:
+        name: ssh
+        state: restarted
+      when: sshd_config_status.changed
+
+    - name: Enforce default umask 027 in /etc/login.defs (NIST AC-3 / CIS 5.4.4)
+      ansible.builtin.lineinfile:
+        path: /etc/login.defs
+        regexp: '^UMASK\s+'
+        line: 'UMASK           027'
+        state: present
+      when: compliance_umask is defined
+
+
+    # -------------------------------------------------------------
+    # 2. Kernel Hardening (NIST SC-5, SC-7 / SOC 2 CC6.6)
+    # -------------------------------------------------------------
+    - name: Deploy kernel sysctl security hardening parameters
+      ansible.builtin.copy:
+        dest: /etc/sysctl.d/99-security-hardening.conf
+        content: |
+          # NIST SP 800-53 SC-5: Memory and network attack surface reduction
+          kernel.randomize_va_space = 2
+          net.ipv4.tcp_syncookies = 1
+          net.ipv4.conf.all.accept_redirects = 0
+          net.ipv4.conf.default.accept_redirects = 0
+          net.ipv4.conf.all.send_redirects = 0
+          net.ipv4.conf.all.rp_filter = 1
+          net.ipv4.conf.default.rp_filter = 1
+          kernel.panic = 10
+          kernel.panic_on_oops = 1
+          fs.suid_dumpable = 0
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Apply sysctl security parameters
+      ansible.builtin.command: sysctl --system
+      changed_when: false
+
+    - name: Deploy blacklist for unused protocols and legacy filesystems (NIST CM-7 / CIS 1.1, 3.4)
+      ansible.builtin.copy:
+        dest: /etc/modprobe.d/99-compliance-blacklist.conf
+        content: |
+          # NIST SP 800-53 CM-7 / CIS Debian Benchmark Hardening
+          # Insecure / Obsolete Network Protocols (CIS Linux 3.4)
+          install dccp /bin/true
+          install sctp /bin/true
+          install rds /bin/true
+          install tipc /bin/true
+
+          # Legacy / Unused Filesystems (CIS Linux 1.1.1)
+          install cramfs /bin/true
+          install freevxfs /bin/true
+          install jffs2 /bin/true
+          install hfs /bin/true
+          install hfsplus /bin/true
+          install udf /bin/true
+        owner: root
+        group: root
+        mode: "0644"
+      when: compliance_modprobe_blacklist_enable | default(true)
+
+
+    # -------------------------------------------------------------
+    # 3. System & Comm Protection (NIST SC-7 / SOC 2 CC6.6): Host Firewall (UFW)
+    # -------------------------------------------------------------
+    - name: Install UFW package
+      ansible.builtin.apt:
+        name: ufw
+        state: present
+      when: ufw_enable | default(true)
+
+    - name: Configure UFW default policies
+      community.general.ufw:
+        direction: "{{ item.direction }}"
+        policy: "{{ item.policy }}"
+      loop:
+        - { direction: 'incoming', policy: 'deny' }
+        - { direction: 'outgoing', policy: 'allow' }
+        - { direction: 'routed', policy: 'allow' } # Critical for container bridge CNI
+      when: ufw_enable | default(true)
+
+    - name: Allow SSH from administration subnets
+      community.general.ufw:
+        rule: allow
+        port: "{{ ssh_port | default(22) | string }}"
+        proto: tcp
+        from_ip: "{{ item }}"
+        comment: "SSH Management Access"
+      loop: "{{ admin_subnets }}"
+      when: ufw_enable | default(true)
+
+    - name: Allow Kubernetes & Longhorn cluster traffic between nodes
+      community.general.ufw:
+        rule: allow
+        from_ip: "{{ item }}"
+        comment: "Internal Cluster Node Mesh"
+      loop: "{{ admin_subnets }}"
+      when: ufw_enable | default(true)
+
+    - name: Allow HTTP and HTTPS for Traefik Ingress
+      community.general.ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: tcp
+        from_ip: "{{ admin_subnets[0] }}"
+        comment: "Traefik Ingress Traffic"
+      loop:
+        - "80"
+        - "443"
+      when: ufw_enable | default(true)
+
+    - name: Enable UFW service
+      community.general.ufw:
+        state: enabled
+      when: ufw_enable | default(true)
+
+    # -------------------------------------------------------------
+    # 3.1. Host Intrusion Defense (NIST AC-7, SI-4 / SOC 2 CC6.1 / CIS 3.5): fail2ban
+    # -------------------------------------------------------------
+    - name: Install fail2ban package
+      ansible.builtin.apt:
+        name: fail2ban
+        state: present
+      when: fail2ban_enable | default(true)
+
+    - name: Deploy fail2ban hardened jail configuration
+      ansible.builtin.copy:
+        dest: /etc/fail2ban/jail.d/99-k3s-hardening.local
+        content: |
+          [DEFAULT]
+          bantime = {{ fail2ban_bantime | default('1h') }}
+          findtime = {{ fail2ban_findtime | default('10m') }}
+          maxretry = {{ fail2ban_maxretry | default(3) }}
+          backend = auto
+          ignoreip = 127.0.0.1/8 ::1 {{ admin_subnets | join(' ') }} {{ cluster_cidr | default('10.42.0.0/16') }}
+
+          [sshd]
+          enabled = true
+          port = {{ ssh_port | default(22) }}
+          backend = systemd
+        owner: root
+        group: root
+        mode: "0644"
+      register: fail2ban_config_status
+      when: fail2ban_enable | default(true)
+
+    - name: Restart fail2ban service if configuration changed
+      ansible.builtin.systemd:
+        name: fail2ban
+        state: restarted
+      when: fail2ban_enable | default(true) and fail2ban_config_status.changed
+
+    - name: Ensure fail2ban service is active and enabled
+      ansible.builtin.systemd:
+        name: fail2ban
+        state: started
+        enabled: true
+      when: fail2ban_enable | default(true)
+
+    # -------------------------------------------------------------
+    # 4. Audit & Accountability (NIST AU-2, AU-8, AU-12 / SOC 2 CC7.2 / CIS 4.1)
+    # -------------------------------------------------------------
+    - name: Install auditd for host event monitoring
+      ansible.builtin.apt:
+        name: auditd
+        state: present
+
+    - name: Deploy comprehensive NIST/CIS auditd rules
+      ansible.builtin.copy:
+        dest: /etc/audit/rules.d/99-compliance.rules
+        content: |
+          # NIST SP 800-53 AU-2, AU-3, AU-12 & CIS Linux 4.1 Audit Baseline
+          -D
+          -b 8192
+          -f 1
+
+          # Identity & Authentication Changes (CIS 4.1.4 / NIST AU-12)
+          -w /etc/group -p wa -k identity
+          -w /etc/passwd -p wa -k identity
+          -w /etc/gshadow -p wa -k identity
+          -w /etc/shadow -p wa -k identity
+          -w /etc/security/opasswd -p wa -k identity
+
+          # Privilege Escalation & Sudoers (CIS 4.1.8 / NIST AU-3)
+          -w /etc/sudoers -p wa -k privilege_escalation
+          -w /etc/sudoers.d/ -p wa -k privilege_escalation
+
+          # SSH Configuration Changes (NIST AC-2 / AU-12)
+          -w /etc/ssh/sshd_config -p wa -k sshd_config
+          -w /etc/ssh/sshd_config.d/ -p wa -k sshd_config
+
+          # Network Configuration Changes (NIST CM-6)
+          -w /etc/hosts -p wa -k network_modifications
+          -w /etc/resolv.conf -p wa -k network_modifications
+
+          # System Configuration & Audit Rules Modifications (CIS 4.1.7 / NIST AU-9)
+          -w /etc/audit/ -p wa -k audit_rules
+          -w /etc/audit/rules.d/ -p wa -k audit_rules
+
+          # Login & Session Auditing (CIS 4.1.6 / NIST AU-12)
+          -w /var/log/faillog -p wa -k logins
+          -w /var/log/lastlog -p wa -k logins
+
+          # Kernel Module Modifications (CIS 4.1.15 / NIST SI-4)
+          -a always,exit -F arch=b64 -S init_module,finit_module,delete_module -k kernel_modules
+
+          # Unauthorized File Access Attempts (CIS 4.1.10 / NIST AU-2)
+          -a always,exit -F arch=b64 -S openat,openat2 -F exit=-EACCES -k unauthorized_access
+          -a always,exit -F arch=b64 -S openat,openat2 -F exit=-EPERM -k unauthorized_access
+        owner: root
+        group: root
+        mode: "0600"
+      register: auditd_rules_status
+      when: auditd_rules_enable | default(true)
+
+    - name: Load and generate auditd rules
+      ansible.builtin.command: augenrules --load
+      changed_when: false
+      when: auditd_rules_status.changed | default(false)
+
+    - name: Ensure auditd service is active and enabled
+      ansible.builtin.systemd:
+        name: auditd
+        state: started
+        enabled: true
+
+    - name: Ensure systemd-timesyncd is enabled for NTP time synchronization
+      ansible.builtin.systemd:
+        name: systemd-timesyncd
+        state: started
+        enabled: true
+
+
+    # -------------------------------------------------------------
+    # 5. System Integrity (NIST SI-2 / SOC 2 CC7.1): Automated Security Patching
+    # -------------------------------------------------------------
+    - name: Install unattended-upgrades package
+      ansible.builtin.apt:
+        name:
+          - unattended-upgrades
+          - apt-listchanges
+        state: present
+      when: unattended_upgrades_enable | default(true)
+
+    - name: Enable periodic unattended security upgrades
+      ansible.builtin.copy:
+        dest: /etc/apt/apt.conf.d/20auto-upgrades
+        content: |
+          APT::Periodic::Update-Package-Lists "1";
+          APT::Periodic::Unattended-Upgrade "1";
+          APT::Periodic::AutocleanInterval "7";
+        owner: root
+        group: root
+        mode: "0644"
+      when: unattended_upgrades_enable | default(true)

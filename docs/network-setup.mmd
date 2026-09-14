@@ -1,0 +1,123 @@
+flowchart TB
+    %% Styling Classes
+    classDef wanNode fill:#f1f5f9,stroke:#64748b,stroke-width:1.5px,rx:6px,ry:6px;
+    classDef gwNode fill:#eff6ff,stroke:#3b82f6,stroke-width:2px,rx:6px,ry:6px;
+    classDef lanNode fill:#ecfdf5,stroke:#10b981,stroke-width:1.5px,rx:6px,ry:6px;
+    classDef chassis fill:#fafafa,stroke:#6366f1,stroke-width:2px,stroke-dasharray: 4 2;
+    classDef vipNode fill:#e0e7ff,stroke:#4f46e5,stroke-width:2px,rx:8px,ry:8px;
+    classDef traefikNode fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,rx:8px,ry:8px;
+    classDef secNode fill:#fee2e2,stroke:#ef4444,stroke-width:1.5px,rx:6px,ry:6px;
+    classDef cpNode fill:#fffbeb,stroke:#f59e0b,stroke-width:1.5px,rx:6px,ry:6px;
+    classDef workerNode fill:#f0fdfa,stroke:#14b8a6,stroke-width:1.5px,rx:6px,ry:6px;
+    classDef appNode fill:#f8fafc,stroke:#334155,stroke-width:1.5px,rx:6px,ry:6px;
+    classDef blockNode fill:#fef2f2,stroke:#b91c1c,stroke-width:2px,rx:6px,ry:6px;
+
+    %% TOP TIER: WAN & INTERNET
+    subgraph WAN_LAYER ["🌐 EXTERNAL WAN & CLIENTS"]
+        UPLINK["<b>Internet Uplink Options</b><br/>Gigabit Fiber / Starlink Satellite / 4G-5G Cellular<br/>Dynamic Public IP | Multi-WAN Failover"]
+        LE["<b>Let's Encrypt ACME Server</b><br/>HTTP-01 Automated Validation"]
+        PUB_USER["<b>Public Users / Remote IoT</b><br/>Access: nodeapp.example.com"]
+        SCANNER["<b>Untrusted WAN Scanners</b><br/>Public Internet (Arbitrary IPs)"]
+    end
+
+    %% GATEWAY & LAN TIER
+    subgraph PERIMETER ["🛡️ PERIMETER & ROUTING LAYER"]
+        subgraph OPENWRT ["<b>Edge Gateway Router (192.168.1.1)</b>"]
+            DDNS["<b>Dynamic DNS (DDNS)</b><br/>Updates example.com to current WAN IP"]
+            NAT["<b>Port Forwarding (DNAT)</b><br/>WAN:80 ➔ 192.168.1.130:80<br/>WAN:443 ➔ 192.168.1.130:443"]
+            HAIRPIN["<b>NAT Loopback / Reflection</b><br/>Internal domain resolution to VIP"]
+        end
+
+        subgraph LAN ["<b>Trusted Internal Networks (RFC 1918)</b>"]
+            WORKSTATION["<b>Admin Workstation</b><br/>192.168.1.50 (macOS / kubectl)"]
+            SUBNETS["<b>Trusted Management CIDRs</b><br/>192.168.0.0/16, 10.0.0.0/8, 172.16.0.0/12"]
+        end
+    end
+
+    %% HARDWARE LAYER
+    subgraph CHASSIS ["🖥️ HARDWARE: DeskPi Super6C Mini-ITX Blade Chassis (100% Off-Grid Solar & 12V LiFePO4 Battery)"]
+        SWITCH["<b>Integrated Gigabit Switch Backplane</b><br/>Dual RJ45 Uplinks to Network | Inter-blade line rate routing"]
+
+        subgraph K3S_INGRESS ["K3s High Availability & Ingress Layer"]
+            VIP["<b>kube-vip Floating Layer 2 VIP: 192.168.1.130</b><br/>Ports: 6443 (API), 80 (HTTP), 443 (HTTPS), 8080/8081 (UIs)"]
+            TRAEFIK["<b>Traefik 2.11 Ingress Controller (kube-system)</b><br/>TLS 1.2+ Min Enforced | Modern AEAD Ciphers (AES-GCM, ChaCha20)"]
+            
+            subgraph TRAEFIK_SECURITY ["Traefik Defense-in-Depth Middleware Stack"]
+                REDIRECT["<b>nodeapp-redirect-https</b><br/>HTTP ➔ HTTPS (308 Permanent Redirect)"]
+                HEADERS["<b>Security Headers Middleware</b><br/>HSTS (31536000s, preload), nosniff, SAMEORIGIN, Permissions-Policy"]
+                ALLOWLIST{"<b>admin-ip-allowlist</b><br/>Permits: 192.168.0.0/16, 10.0.0.0/8, 172.16.0.0/12<br/>Blocks: All Public WAN IPs"}
+            end
+        end
+
+        subgraph CP_NODES ["Control Plane Mesh (HA Embedded etcd)"]
+            K1["<b>kube-1</b> (Slot 1: 192.168.1.138)<br/>Server | etcd Leader | Active kube-vip"]
+            K2["<b>kube-2</b> (Slot 2: 192.168.1.238)<br/>Server | etcd Peer | Standby kube-vip"]
+            K3["<b>kube-3</b> (Slot 3: 192.168.1.185)<br/>Server | etcd Peer | Standby kube-vip"]
+        end
+
+        subgraph WORKER_NODES ["Worker & Storage Mesh (Dedicated NVMe)"]
+            K4["<b>kube-4</b> (Slot 4: 192.168.1.198)<br/>Worker | Longhorn Storage Replica | App workloads"]
+            K5["<b>kube-5</b> (Slot 5: 192.168.1.91)<br/>Worker | Longhorn Storage Replica | NodeApp Pod 1"]
+            K6["<b>kube-6</b> (Slot 6: 192.168.1.102)<br/>Worker | Longhorn Storage Replica | NodeApp Pod 2"]
+        end
+    end
+
+    %% WORKLOADS LAYER
+    subgraph WORKLOADS ["📦 APPLICATION WORKLOADS & INGRESS TARGETS"]
+        NODEAPP["<b>Precision Viticulture UI (Namespace: nodeapp)</b><br/>URL: https://nodeapp.example.com/nodeapp/temp<br/>Endpoints: /temp, /sensors, /messages<br/>Security: X-Powered-By Disabled | Session Secret"]
+        HEADLAMP["<b>Headlamp Cluster UI (Namespace: headlamp)</b><br/>URL: https://headlamp.example.com<br/>Auth: Native Kubernetes RBAC Bearer Token<br/>Scope: LAN / VPN Only"]
+        LONGHORN["<b>Longhorn Storage UI (Namespace: longhorn-system)</b><br/>URL: https://longhorn.example.com<br/>Auth: Traefik BasicAuth (kube-admin)<br/>Scope: LAN / VPN Only"]
+        CERTMGR["<b>cert-manager v1.16.2</b><br/>Issuer: letsencrypt-prod (HTTP-01)<br/>Certificates: headlamp-tls, longhorn-tls, nodeapp-tls"]
+        BLOCKED["<b>🛑 403 Forbidden</b><br/>Access Denied at Traefik Ingress Edge"]
+    end
+
+    %% Traffic Connections
+    UPLINK -->|"WAN (Fiber / Starlink / 5G)"| OPENWRT
+    LE -->|"HTTP-01 Validation (Port 80)"| NAT
+    PUB_USER -->|"HTTPS Requests (Port 443)"| NAT
+    SCANNER -.->|"Unsolicited Probes"| NAT
+
+    NAT ==>|"DNAT Forward (80, 443)"| SWITCH
+    WORKSTATION ==>|"Local HTTPS / kubectl 6443"| SWITCH
+    SUBNETS -.->|"Trusted LAN / VPN Traffic"| SWITCH
+
+    SWITCH ==> VIP
+    VIP ==> TRAEFIK
+
+    TRAEFIK --> REDIRECT
+    REDIRECT --> HEADERS
+
+    %% Public app routing
+    HEADERS ==>|"Route: PathPrefix(/nodeapp)"| NODEAPP
+
+    %% Admin UIs routing through allowlist
+    HEADERS -->|"Route: headlamp.example.com & longhorn.example.com"| ALLOWLIST
+    ALLOWLIST ==>|"Source IP in Trusted Range"| HEADLAMP
+    ALLOWLIST ==>|"Source IP in Trusted Range"| LONGHORN
+    ALLOWLIST -.->|"Source IP is External WAN"| BLOCKED
+
+    %% ACME Challenge path
+    TRAEFIK -.->|"Path: /.well-known/acme-challenge"| CERTMGR
+
+    %% Internal Node Mesh Connections
+    K1 <===>|"etcd Raft (2379/2380)"| K2
+    K2 <===>|"etcd Raft (2379/2380)"| K3
+    K1 <===>|"etcd Raft (2379/2380)"| K3
+
+    CP_NODES <===>|"Flannel VXLAN Overlay (10.42.0.0/16, UDP 8472)"| WORKER_NODES
+    K4 <===>|"Longhorn 3-Way NVMe Block Replication"| K5
+    K5 <===>|"Longhorn 3-Way NVMe Block Replication"| K6
+    K4 <===>|"Longhorn 3-Way NVMe Block Replication"| K6
+
+    %% Class Assignments
+    class UPLINK,LE,PUB_USER,SCANNER wanNode;
+    class OPENWRT,DDNS,NAT,HAIRPIN gwNode;
+    class WORKSTATION,SUBNETS lanNode;
+    class CHASSIS chassis;
+    class VIP vipNode;
+    class TRAEFIK traefikNode;
+    class REDIRECT,HEADERS,ALLOWLIST secNode;
+    class K1,K2,K3 cpNode;
+    class K4,K5,K6 workerNode;
+    class NODEAPP,HEADLAMP,LONGHORN,CERTMGR appNode;
+    class BLOCKED blockNode;

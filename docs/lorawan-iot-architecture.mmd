@@ -1,0 +1,120 @@
+flowchart TB
+    %% =========================================================================
+    %% STYLING DEFINITIONS
+    %% =========================================================================
+    classDef fieldNode fill:#ecfdf5,stroke:#059669,stroke-width:2px,rx:8px,ry:8px;
+    classDef gwNode fill:#eff6ff,stroke:#2563eb,stroke-width:2px,rx:8px,ry:8px;
+    classDef wifiNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,rx:8px,ry:8px;
+    classDef edgeChassis fill:#fafafa,stroke:#4f46e5,stroke-width:2.5px,stroke-dasharray: 6 3,rx:10px,ry:10px;
+    classDef edgeApp fill:#ede9fe,stroke:#7c3aed,stroke-width:1.8px,rx:6px,ry:6px;
+    classDef storageNode fill:#f0fdfa,stroke:#0d9488,stroke-width:1.5px,rx:6px,ry:6px;
+    classDef uplinkNode fill:#fffbeb,stroke:#d97706,stroke-width:2px,rx:8px,ry:8px;
+    classDef cloudNode fill:#f8fafc,stroke:#475569,stroke-width:1.5px,rx:6px,ry:6px;
+    classDef noteBox fill:#fefce8,stroke:#ca8a04,stroke-width:1.5px,stroke-dasharray: 4 2,rx:6px,ry:6px;
+
+    %% =========================================================================
+    %% TIER 1: VINEYARD SENSORS & FIELD ACTUATORS
+    %% =========================================================================
+    subgraph FIELD ["🌱 VINEYARD FIELD SENSORS & ACTUATORS (Low-Power Solar & Battery)"]
+        direction LR
+        S1["<b>Soil Profile Probe (Node A1)</b><br/>• 3 Depths: 6-inch, 18-inch, 36-inch<br/>• 6 Telemetry Points: Moisture &amp; Temp<br/>• Solar + 3.7V LiFePO4"]
+        S2["<b>Canopy Microclimate (Node A2)</b><br/>• Ambient Canopy Temp (&deg;F)<br/>• Canopy Relative Humidity (%)<br/>• Solar Charging & Battery Volts"]
+        S3["<b>Precision Irrigation Actuator</b><br/>• Solenoid Water Valve Relay<br/>• Booster Pump Run State<br/>• Drip Line Pressure Sensor"]
+    end
+
+    %% =========================================================================
+    %% TIER 2: LORAWAN GATEWAY & FORWARDING
+    %% =========================================================================
+    subgraph GATEWAY_TIER ["📡 OUTDOOR LORAWAN GATEWAY (IP67 Tower / Pole Mount)"]
+        GW["<b>Industrial LoRaWAN Gateway</b><br/>• 8-Channel SX1302/SX1303 Concentrator<br/>• Basic Station Protocol (LNS over WSS)<br/>• Sub-GHz ISM: 915 MHz (US) / 868 MHz (EU)"]
+    end
+
+    %% =========================================================================
+    %% TIER 3: LOCAL WIRELESS BACKHAUL
+    %% =========================================================================
+    subgraph BACKHAUL ["📶 LOCAL WIRELESS BACKHAUL"]
+        WIFI["<b>Local Wi-Fi Network (2.4 GHz / 5 GHz)</b><br/>• Long-Range 802.11ac Point-to-Point or AP<br/>• Forwarding Frames to Edge Network Switch"]
+    end
+
+    %% =========================================================================
+    %% TIER 4: DESKPI SUPER6C EDGE COMPUTE CLUSTER
+    %% =========================================================================
+    subgraph SUPER6C ["🖥️ EDGE PLATFORM: DeskPi Super6C 6-Blade K3s Cluster (&lt;85W Low Power)"]
+        direction TB
+        
+        VIP["<b>kube-vip Virtual IP (192.168.1.130) + Traefik Ingress</b><br/>TLS 1.2+ &bull; Rate Limiting &bull; WSS Basic Station Endpoint"]
+        
+        subgraph APPS ["Edge Application & Telemetry Processing Layer"]
+            direction LR
+            CS["<b>ChirpStack v4 Suite</b><br/>• Gateway Bridge (WSS)<br/>• Network & Join Server<br/>• AES-128 Frame Decryption<br/>• Internal MQTT Broker"]
+            TB["<b>ThingsBoard CE</b><br/>• IoT Device Management<br/>• Rule Engine & Alerting<br/>• Automated Irrigation Scheduling<br/>• Valve Actuator Downlinks"]
+            PORTAL["<b>Precision Viticulture UI</b><br/>• 3-Depth Soil Profile<br/>• Canopy Temp & Moisture<br/>• LoRaWAN Uplink Logs"]
+        end
+
+        subgraph STORAGE ["Longhorn Replicated NVMe Storage Layer"]
+            NVME["<b>Longhorn 3-Way Synchronous NVMe Replication</b><br/>• PostgreSQL (ChirpStack metadata)<br/>• TimescaleDB (Historical telemetry retention)<br/>• High-IOPS persistent storage"]
+        end
+
+        VIP ==>|"WSS Basic Station Traffic"| CS
+        CS ==>|"Decoded JSON via MQTT"| TB
+        CS ==>|"Telemetry Ingestion"| PORTAL
+        TB -.->|"Automated Valve Downlinks"| CS
+        APPS ==> STORAGE
+    end
+
+    %% =========================================================================
+    %% TIER 5: RURAL INTERNET UPLINK OPTIONS
+    %% =========================================================================
+    subgraph UPLINK ["🛰️ RURAL INTERNET UPLINK OPTIONS (Multi-WAN / Failover)"]
+        direction LR
+        STARLINK["<b>Starlink Satellite Uplink</b><br/>• Low Earth Orbit (LEO) Dishy<br/>• High Bandwidth, Low Latency<br/>• Primary Rural Internet Connection"]
+        CELLULAR["<b>Industrial 4G/5G Cellular Gateway</b><br/>• LTE Cat-4/Cat-6 / 5G Dual SIM<br/>• e.g., Teltonika / Cradlepoint<br/>• Secondary / Redundant Failover"]
+    end
+
+    %% =========================================================================
+    %% TIER 6: CLOUD & REMOTE MONITORING
+    %% =========================================================================
+    subgraph CLOUD ["☁️ REMOTE VISIBILITY & SECURE OFF-SITE MONITORING"]
+        REMOTE["<b>Remote Agronomist & Vineyard Dashboard</b><br/>• Remote Irrigation Management & Historical Trends<br/>• Automated Frost, Heat Stress & Dry-Out Alerts<br/>• Encrypted TLS Ingress / Cloudflare Edge Tunnel"]
+    end
+
+    %% =========================================================================
+    %% LOCAL AUTONOMY NOTE
+    %% =========================================================================
+    AUTONOMY["<b>🛡️ 100% Local Autonomous Control Loop</b><br/>If Starlink or Cellular uplink is severed, the Super6C edge cluster<br/>continues 24/7 telemetry recording and automated irrigation loops with ZERO interruption."]
+
+    %% =========================================================================
+    %% CONNECTIONS & FLOWS
+    %% =========================================================================
+    %% Field to Gateway via LoRaWAN RF
+    S1 ==>|"LoRaWAN RF (915 MHz)<br/>Up to 5–10 km Range"| GW
+    S2 ==>|"LoRaWAN RF (915 MHz)"| GW
+    S3 <==>|"LoRaWAN RF: Uplink Status<br/>&amp; Downlink Actuation"| GW
+
+    %% Gateway to Super6C via Wi-Fi
+    GW ==>|"Wi-Fi Forwarding<br/>(802.11ac / WSS Frames)"| WIFI
+    WIFI ==>|"Local LAN Ingress"| VIP
+
+    %% Downlink actuation feedback loop
+    CS -.->|"Downlink Queue Frame"| GW
+
+    %% Edge to Uplinks
+    SUPER6C <==>|"Edge Gateway Router<br/>(Dual-WAN Failover)"| UPLINK
+    STARLINK ==>|"Primary Internet"| CLOUD
+    CELLULAR -.->|"Cellular Fallback"| CLOUD
+
+    %% Autonomy linkage
+    SUPER6C -.- AUTONOMY
+
+    %% =========================================================================
+    %% CLASS ASSIGNMENTS
+    %% =========================================================================
+    class S1,S2,S3 fieldNode;
+    class GW gwNode;
+    class WIFI wifiNode;
+    class SUPER6C edgeChassis;
+    class VIP,CS,TB,PORTAL edgeApp;
+    class NVME storageNode;
+    class STARLINK,CELLULAR uplinkNode;
+    class REMOTE cloudNode;
+    class AUTONOMY noteBox;

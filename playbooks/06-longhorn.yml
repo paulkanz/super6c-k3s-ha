@@ -1,0 +1,63 @@
+---
+- name: 06 - Deploy and Configure Longhorn Distributed Block Storage
+  hosts: kube-1
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Wait for all 6 nodes to report Ready status
+      ansible.builtin.command: /usr/local/bin/k3s kubectl get nodes --no-headers
+      register: cluster_nodes
+      until: (cluster_nodes.stdout_lines | length == 6) and ('NotReady' not in cluster_nodes.stdout)
+      retries: 24
+      delay: 10
+      changed_when: false
+
+    - name: Ensure Longhorn namespace exists
+      ansible.builtin.command:
+        cmd: /usr/local/bin/k3s kubectl create namespace longhorn-system
+      register: ns_create
+      failed_when: ns_create.rc != 0 and 'already exists' not in ns_create.stderr
+      changed_when: ns_create.rc == 0
+
+    - name: Configure Longhorn default settings via ConfigMap
+      ansible.builtin.shell: |
+        set -o pipefail
+        cat <<'EOF' | /usr/local/bin/k3s kubectl apply -f -
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: longhorn-default-setting
+          namespace: longhorn-system
+        data:
+          default-setting.yaml: |-
+            default-replica-count: {{ longhorn_replica_count | default(3) }}
+            storage-minimal-available-percentage: {{ longhorn_storage_minimal_available_percentage | default(15) }}
+            guaranteed-instance-manager-cpu: {{ longhorn_guaranteed_instance_manager_cpu | default(10) }}
+        EOF
+      args:
+        executable: /bin/bash
+      changed_when: false
+
+    - name: Deploy Longhorn storage system manifests
+      ansible.builtin.command:
+        cmd: "/usr/local/bin/k3s kubectl apply -f https://raw.githubusercontent.com/longhorn/longhorn/{{ longhorn_version }}/deploy/longhorn.yaml"
+      register: longhorn_deploy
+      changed_when: "'created' in longhorn_deploy.stdout or 'configured' in longhorn_deploy.stdout"
+
+    - name: Wait for Longhorn manager daemonset to be ready
+      ansible.builtin.command:
+        cmd: /usr/local/bin/k3s kubectl rollout status daemonset/longhorn-manager -n longhorn-system --timeout=300s
+      changed_when: false
+
+    - name: Deploy Longhorn Traefik Ingress and Middleware for /longhorn
+      ansible.builtin.template:
+        src: ../templates/longhorn-ingress.yaml.j2
+        dest: /var/lib/rancher/k3s/server/manifests/longhorn-ingress.yaml
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Wait for Longhorn UI deployment to be ready
+      ansible.builtin.command:
+        cmd: /usr/local/bin/k3s kubectl rollout status deployment/longhorn-ui -n longhorn-system --timeout=180s
+      changed_when: false

@@ -1,0 +1,18 @@
+---
+- name: 07 - Deploy and Configure Headlamp Cluster Web UI
+  hosts: kube-1
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Deploy Headlamp manifests to K3s server auto-deploy directory
+      ansible.builtin.template:
+        src: ../templates/headlamp.yaml.j2
+        dest: /var/lib/rancher/k3s/server/manifests/headlamp.yaml
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Wait for Headlamp deployment to be successfully rolled out
+      ansible.builtin.command:
+        cmd: /usr/local/bin/k3s kubectl rollout status deployment/headlamp -n headlamp --timeout=180s
+      changed_when: false

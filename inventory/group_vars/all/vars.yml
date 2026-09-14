@@ -1,0 +1,140 @@
+---
+# User and Python
+ansible_user: "{{ vault_ansible_user | default('admin') }}"
+ansible_python_interpreter: /usr/bin/python3
+
+# K3s Version and Network Topology
+k3s_version: "v1.31.5+k3s1"
+k3s_vip: "192.168.1.130"
+k3s_vip_interface: "eth0"
+cluster_cidr: "10.42.0.0/16"
+service_cidr: "10.43.0.0/16"
+cluster_dns: "10.43.0.10"
+
+# Cluster Join Token (Can be overridden via Ansible Vault)
+k3s_token: "{{ vault_k3s_token | default('k3s-ha-cluster-secret-token-CHANGEME') }}"
+
+# Component Versions
+kube_vip_version: "v0.8.8"
+longhorn_version: "v1.7.2"
+longhorn_replica_count: 3
+longhorn_storage_minimal_available_percentage: 15
+longhorn_guaranteed_instance_manager_cpu: 10
+longhorn_ui_port: 8080
+
+# NodeApp Application Configuration
+nodeapp_image: "nodeapp:0.2.3"
+nodeapp_replicas: 2
+nodeapp_port: 4300
+nodeapp_db_host: "{{ vault_nodeapp_db_host | default('192.168.1.150') }}"
+nodeapp_db_port: 3306
+nodeapp_db_name: "{{ vault_nodeapp_db_name | default('telemetry_db') }}"
+nodeapp_domain: "nodeapp.{{ base_domain }}"
+nodeapp_db_user: "{{ vault_nodeapp_db_user }}"
+nodeapp_db_password: "{{ vault_nodeapp_db_password }}"
+nodeapp_session_secret: "{{ vault_nodeapp_session_secret }}"
+nodeapp_cpu_request: "100m"
+nodeapp_cpu_limit: "500m"
+nodeapp_memory_request: "128Mi"
+nodeapp_memory_limit: "256Mi"
+nodeapp_pdb_min_available: 1
+nodeapp_hpa_min_replicas: 2
+nodeapp_hpa_max_replicas: 5
+nodeapp_hpa_cpu_target: 70
+nodeapp_hpa_memory_target: 80
+
+# NodeApp Rate Limiting & Traffic Shaping (DDoS Mitigation)
+nodeapp_ratelimit_average: 100
+nodeapp_ratelimit_period: "1m"
+nodeapp_ratelimit_burst: 30
+nodeapp_inflight_max: 15
+nodeapp_buffering_max_body_bytes: 2097152    # 2 MB max request body
+nodeapp_buffering_mem_body_bytes: 1048576    # 1 MB threshold for memory buffering
+
+# Headlamp Dashboard Configuration
+headlamp_image: "ghcr.io/headlamp-k8s/headlamp:latest"
+headlamp_port: 8081
+headlamp_cpu_request: "100m"
+headlamp_cpu_limit: "500m"
+headlamp_memory_request: "64Mi"
+headlamp_memory_limit: "256Mi"
+
+# Ingress Domains & SSL (ACME cert-manager)
+acme_email: "{{ vault_acme_email | default('admin@example.com') }}"
+base_domain: "{{ vault_base_domain | default('example.com') }}"
+headlamp_domain: "headlamp.{{ base_domain }}"
+longhorn_domain: "longhorn.{{ base_domain }}"
+cert_manager_version: "v1.16.2"
+acme_issuer_prod: "letsencrypt-prod"
+acme_issuer_staging: "letsencrypt-staging"
+
+# Traefik Perimeter Access Control (Admin IP Allowlist)
+traefik_admin_allowlist_cidrs:
+  - "192.168.0.0/16"
+  - "10.0.0.0/8"
+  - "172.16.0.0/12"
+  - "127.0.0.1/32"
+
+# Traefik Cryptographic TLS Policy
+traefik_tls_min_version: "VersionTLS12"
+traefik_tls_sni_strict: false
+traefik_tls_cipher_suites:
+  - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+  - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+  - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+  - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+  - TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+  - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
+
+# Traefik Standard Security Headers
+traefik_hsts_seconds: 31536000
+traefik_hsts_include_subdomains: true
+traefik_hsts_preload: true
+traefik_frame_options: "SAMEORIGIN"
+traefik_content_type_nosniff: true
+traefik_browser_xss_filter: true
+traefik_referrer_policy: "strict-origin-when-cross-origin"
+traefik_permissions_policy: "geolocation=(), camera=(), microphone=()"
+
+# Longhorn Web UI Authentication
+longhorn_auth_user: "{{ vault_longhorn_admin_user }}"
+longhorn_auth_password: "{{ vault_longhorn_admin_password }}"
+longhorn_htpasswd: "{{ vault_longhorn_htpasswd }}"
+
+# Compliance & Security Controls (NIST SP 800-53, SOC 2, HITRUST)
+ufw_enable: true
+admin_subnets:
+  - "192.168.1.0/24"
+  - "10.0.0.0/8"
+  - "172.16.0.0/12"
+
+# Host SSH Hardening (sshd)
+ssh_port: 22
+ssh_client_alive_interval: 300
+ssh_client_alive_count_max: 2
+ssh_max_auth_tries: 4
+
+# Host Intrusion Defense (fail2ban) & System Hardening (NIST AC-7, AC-8, AU-2, CM-7)
+fail2ban_enable: true
+fail2ban_bantime: "1h"
+fail2ban_findtime: "10m"
+fail2ban_maxretry: 3
+auditd_rules_enable: true
+compliance_modprobe_blacklist_enable: true
+compliance_banner_enable: true
+compliance_umask: "027"
+
+
+# K3s CIS Benchmark & Hardening Flags
+k3s_protect_kernel_defaults: true
+k3s_secrets_encryption: true
+k3s_audit_logging: true
+unattended_upgrades_enable: true
+
+# Timezone and Localization
+cluster_timezone: "America/Los_Angeles"
+
+# K3s Automated etcd Snapshots
+k3s_etcd_snapshot_schedule_cron: "0 */6 * * *"
+k3s_etcd_snapshot_retention: 28
+k3s_etcd_snapshot_compress: true

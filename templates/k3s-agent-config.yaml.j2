@@ -1,0 +1,6 @@
+server: "https://{{ k3s_vip }}:6443"
+token: "{{ k3s_token }}"
+node-label:
+  - "node.kubernetes.io/role=worker"
+  - "node.longhorn.io/create-default-disk=true"
+protect-kernel-defaults: {{ k3s_protect_kernel_defaults | lower }}

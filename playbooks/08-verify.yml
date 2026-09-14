@@ -1,0 +1,60 @@
+---
+- name: 08 - Verify Cluster Health, Ingress SSL, and Export Kubeconfig
+  hosts: kube-1
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Fetch kubeconfig from primary server
+      ansible.builtin.slurp:
+        src: /etc/rancher/k3s/k3s.yaml
+      register: remote_kubeconfig
+
+    - name: Save adjusted kubeconfig to controller localhost
+      ansible.builtin.copy:
+        dest: "{{ lookup('env', 'HOME') }}/.kube/config-super6c-edge"
+        content: "{{ remote_kubeconfig.content | b64decode | regex_replace('https://127.0.0.1:6443', 'https://' ~ k3s_vip ~ ':6443') }}"
+        mode: "0600"
+      delegate_to: localhost
+      become: false
+
+    - name: Query cluster nodes
+      ansible.builtin.command: /usr/local/bin/k3s kubectl get nodes -o wide
+      register: node_status
+      changed_when: false
+
+    - name: Query core cluster pods
+      ansible.builtin.command: /usr/local/bin/k3s kubectl get pods -A
+      register: pod_status
+      changed_when: false
+
+    - name: Query storage classes
+      ansible.builtin.command: /usr/local/bin/k3s kubectl get storageclass
+      register: sc_status
+      changed_when: false
+
+    - name: Retrieve Headlamp admin token
+      ansible.builtin.command:
+        cmd: /usr/local/bin/k3s kubectl get secret headlamp-admin-token -n headlamp -o jsonpath='{.data.token}'
+      register: headlamp_token_raw
+      changed_when: false
+
+    - name: Display Cluster Health & Status
+      ansible.builtin.debug:
+        msg:
+          - "================ CLUSTER NODES ================"
+          - "{{ node_status.stdout_lines }}"
+          - "================ STORAGE CLASSES ==============="
+          - "{{ sc_status.stdout_lines }}"
+          - "================ DASHBOARDS & ACCESS ================"
+          - "Headlamp Domain (SSL): https://{{ headlamp_domain }}"
+          - "Headlamp Local Fallback: http://{{ k3s_vip }}/headlamp"
+          - "Headlamp Admin Token: {{ headlamp_token_raw.stdout | b64decode }}"
+          - "----------------------------------------------------"
+          - "Longhorn Domain (SSL): https://{{ longhorn_domain }}"
+          - "Longhorn Local Fallback: http://{{ k3s_vip }}/longhorn (or :8080)"
+          - "Longhorn BasicAuth User: {{ longhorn_auth_user }}"
+          - "Longhorn BasicAuth Password: {{ longhorn_auth_password }}"
+          - "----------------------------------------------------"
+          - "Control Plane Virtual IP: https://{{ k3s_vip }}:6443"
+          - "Kubeconfig successfully exported to: ~/.kube/config-super6c-edge"
+          - "To use cluster from host: export KUBECONFIG=~/.kube/config-super6c-edge"

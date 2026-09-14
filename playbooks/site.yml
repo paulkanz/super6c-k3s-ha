@@ -1,0 +1,31 @@
+---
+# Master Orchestration Playbook for Industrial IoT & Edge Computing K3s Cluster
+- name: 00 - Ping and Connectivity Verification
+  ansible.builtin.import_playbook: 00-ping.yml
+
+- name: 01 - Node Hardware and OS Bootstrapping
+  ansible.builtin.import_playbook: 01-bootstrap.yml
+
+- name: 02 - Rolling Operating System Patching
+  ansible.builtin.import_playbook: 02-patch.yml
+
+- name: 03 - Host Security Hardening Baseline
+  ansible.builtin.import_playbook: 03-security-harden.yml
+
+- name: 04 - High-Availability K3s Cluster Deployment
+  ansible.builtin.import_playbook: 04-k3s-cluster.yml
+
+- name: 05 - Deploy cert-manager and Let's Encrypt Issuers
+  ansible.builtin.import_playbook: 05-cert-manager.yml
+
+- name: 06 - Longhorn Distributed Block Storage
+  ansible.builtin.import_playbook: 06-longhorn.yml
+
+- name: 07 - Headlamp Kubernetes Dashboard
+  ansible.builtin.import_playbook: 07-headlamp.yml
+
+- name: 08 - Cluster Health Verification and Export Kubeconfig
+  ansible.builtin.import_playbook: 08-verify.yml
+
+- name: 09 - NodeApp Sensor Dashboard Deployment
+  ansible.builtin.import_playbook: 09-nodeapp.yml

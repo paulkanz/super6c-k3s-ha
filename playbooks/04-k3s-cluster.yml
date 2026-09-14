@@ -1,0 +1,219 @@
+---
+- name: 04.1 - Bootstrap Primary K3s Server Node with kube-vip
+  hosts: kube-1
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Ensure K3s config and static pod manifest directories exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+      loop:
+        - /etc/rancher/k3s
+        - /var/lib/rancher/k3s/agent/pod-manifests
+        - /var/lib/rancher/k3s/server/logs
+
+    - name: Deploy Kubernetes API audit policy
+      ansible.builtin.template:
+        src: ../templates/audit-policy.yaml.j2
+        dest: /etc/rancher/k3s/audit-policy.yaml
+        owner: root
+        group: root
+        mode: "0640"
+
+    - name: Deploy kube-vip static pod manifest on primary server
+      ansible.builtin.template:
+        src: ../templates/kube-vip.yaml.j2
+        dest: /var/lib/rancher/k3s/agent/pod-manifests/kube-vip.yaml
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Check if K3s is already installed
+      ansible.builtin.stat:
+        path: /usr/local/bin/k3s
+      register: k3s_binary
+
+    - name: Deploy K3s primary server configuration
+      ansible.builtin.template:
+        src: ../templates/k3s-server-config.yaml.j2
+        dest: /etc/rancher/k3s/config.yaml
+        owner: root
+        group: root
+        mode: "0640"
+      register: k3s_server_config
+
+    - name: Restart k3s service on primary server if configuration changed
+      ansible.builtin.systemd:
+        name: k3s
+        state: restarted
+      when: k3s_server_config.changed and k3s_binary.stat.exists
+
+    - name: Install K3s on primary server
+      ansible.builtin.shell: |
+        set -o pipefail
+        curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="{{ k3s_version }}" sh -
+      args:
+        executable: /bin/bash
+      when: not k3s_binary.stat.exists
+
+    - name: Ensure k3s service is started and enabled
+      ansible.builtin.systemd:
+        name: k3s
+        state: started
+        enabled: true
+
+    - name: Wait for primary server node to report Ready
+      ansible.builtin.command: /usr/local/bin/k3s kubectl wait --for=condition=Ready node/kube-1 --timeout=180s
+      register: node_ready
+      changed_when: false
+      retries: 30
+      delay: 10
+      until: node_ready.rc == 0
+
+    - name: Wait for kube-vip virtual IP to respond on port 6443
+      ansible.builtin.wait_for:
+        host: "{{ k3s_vip }}"
+        port: 6443
+        timeout: 120
+        delay: 5
+
+- name: 04.2 - Join Secondary K3s Server Nodes to Embedded etcd Cluster
+  hosts: k3s_servers:!kube-1
+  gather_facts: false
+  become: true
+  serial: 1
+  tasks:
+    - name: Ensure K3s config and static pod manifest directories exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+      loop:
+        - /etc/rancher/k3s
+        - /var/lib/rancher/k3s/agent/pod-manifests
+        - /var/lib/rancher/k3s/server/logs
+
+    - name: Deploy Kubernetes API audit policy
+      ansible.builtin.template:
+        src: ../templates/audit-policy.yaml.j2
+        dest: /etc/rancher/k3s/audit-policy.yaml
+        owner: root
+        group: root
+        mode: "0640"
+
+    - name: Deploy kube-vip static pod manifest on secondary servers
+      ansible.builtin.template:
+        src: ../templates/kube-vip.yaml.j2
+        dest: /var/lib/rancher/k3s/agent/pod-manifests/kube-vip.yaml
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Check if K3s is already installed
+      ansible.builtin.stat:
+        path: /usr/local/bin/k3s
+      register: k3s_binary
+
+    - name: Deploy K3s secondary server configuration
+      ansible.builtin.template:
+        src: ../templates/k3s-server-config.yaml.j2
+        dest: /etc/rancher/k3s/config.yaml
+        owner: root
+        group: root
+        mode: "0640"
+      register: k3s_server_config
+
+    - name: Restart k3s service on secondary server if configuration changed
+      ansible.builtin.systemd:
+        name: k3s
+        state: restarted
+      when: k3s_server_config.changed and k3s_binary.stat.exists
+
+    - name: Install and join K3s secondary server
+      ansible.builtin.shell: |
+        set -o pipefail
+        curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="{{ k3s_version }}" sh -
+      args:
+        executable: /bin/bash
+      when: not k3s_binary.stat.exists
+
+    - name: Ensure k3s service is started and enabled
+      ansible.builtin.systemd:
+        name: k3s
+        state: started
+        enabled: true
+
+    - name: Wait for server node to report Ready
+      ansible.builtin.command: "/usr/local/bin/k3s kubectl wait --for=condition=Ready node/{{ inventory_hostname }} --timeout=180s"
+      register: node_ready
+      changed_when: false
+      retries: 30
+      delay: 10
+      until: node_ready.rc == 0
+
+- name: 04.3 - Join K3s Agent Worker Nodes
+  hosts: k3s_agents
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Ensure K3s config directory exists
+      ansible.builtin.file:
+        path: /etc/rancher/k3s
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Deploy K3s agent configuration
+      ansible.builtin.template:
+        src: ../templates/k3s-agent-config.yaml.j2
+        dest: /etc/rancher/k3s/config.yaml
+        owner: root
+        group: root
+        mode: "0640"
+
+    - name: Check if K3s agent is already installed
+      ansible.builtin.stat:
+        path: /usr/local/bin/k3s
+      register: k3s_agent_binary
+
+    - name: Install and join K3s agent
+      ansible.builtin.shell: |
+        set -o pipefail
+        curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="{{ k3s_version }}" K3S_URL="https://{{ k3s_vip }}:6443" K3S_TOKEN="{{ k3s_token }}" sh -
+      args:
+        executable: /bin/bash
+      when: not k3s_agent_binary.stat.exists
+
+    - name: Ensure k3s-agent service is started and enabled
+      ansible.builtin.systemd:
+        name: k3s-agent
+        state: started
+        enabled: true
+
+- name: 04.4 - Enforce CIS Kubernetes Benchmark Baseline (ServiceAccount Hardening)
+  hosts: kube-1
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Disable automountServiceAccountToken on default service accounts (CIS Kubernetes 5.1.5)
+      ansible.builtin.command:
+        cmd: >
+          /usr/local/bin/k3s kubectl patch serviceaccount default -n {{ item }}
+          -p '{"automountServiceAccountToken": false}'
+      loop:
+        - default
+        - kube-system
+        - kube-public
+        - kube-node-lease
+        - nodeapp
+        - headlamp
+      changed_when: false
+      failed_when: false
+

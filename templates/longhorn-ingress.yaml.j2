@@ -1,0 +1,138 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: longhorn-auth-secret
+  namespace: longhorn-system
+type: Opaque
+data:
+  users: {{ longhorn_htpasswd | b64encode }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: longhorn-basic-auth
+  namespace: longhorn-system
+spec:
+  basicAuth:
+    secret: longhorn-auth-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: longhorn-frontend-lb
+  namespace: longhorn-system
+spec:
+  type: LoadBalancer
+  selector:
+    app: longhorn-ui
+  ports:
+    - name: http
+      port: {{ longhorn_ui_port | default(8080) }}
+      targetPort: 8000
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: longhorn-redirect
+  namespace: longhorn-system
+spec:
+  redirectRegex:
+    regex: "^http://([^/]+)/longhorn.*"
+    replacement: "http://${1}:{{ longhorn_ui_port | default(8080) }}/"
+    permanent: false
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: longhorn-redirect-route
+  namespace: longhorn-system
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: PathPrefix(`/longhorn`)
+      kind: Rule
+      middlewares:
+        - name: longhorn-redirect
+      services:
+        - name: longhorn-frontend
+          port: 80
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: admin-ip-allowlist
+  namespace: longhorn-system
+spec:
+  ipAllowList:
+    sourceRange:
+{% for cidr in traefik_admin_allowlist_cidrs %}
+      - "{{ cidr }}"
+{% endfor %}
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: longhorn-security-headers
+  namespace: longhorn-system
+spec:
+  headers:
+    stsSeconds: {{ traefik_hsts_seconds | default(31536000) }}
+    stsIncludeSubdomains: {{ traefik_hsts_include_subdomains | default(true) | lower }}
+    stsPreload: {{ traefik_hsts_preload | default(true) | lower }}
+    customFrameOptionsValue: "{{ traefik_frame_options | default('SAMEORIGIN') }}"
+    contentTypeNosniff: {{ traefik_content_type_nosniff | default(true) | lower }}
+    browserXssFilter: {{ traefik_browser_xss_filter | default(true) | lower }}
+    referrerPolicy: "{{ traefik_referrer_policy | default('strict-origin-when-cross-origin') }}"
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: longhorn-ui-domain
+  namespace: longhorn-system
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - match: Host(`{{ longhorn_domain | default('longhorn.example.com') }}`)
+      kind: Rule
+      middlewares:
+        - name: admin-ip-allowlist
+        - name: longhorn-security-headers
+        - name: longhorn-basic-auth
+      services:
+        - name: longhorn-frontend
+          port: 80
+  tls:
+    secretName: longhorn-tls-secret
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: longhorn-ui-host
+  namespace: longhorn-system
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`longhorn.local`) || Host(`longhorn.kube.local`)
+      kind: Rule
+      middlewares:
+        - name: longhorn-basic-auth
+      services:
+        - name: longhorn-frontend
+          port: 80
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: longhorn-tls
+  namespace: longhorn-system
+spec:
+  secretName: longhorn-tls-secret
+  issuerRef:
+    name: {{ acme_issuer_prod | default('letsencrypt-prod') }}
+    kind: ClusterIssuer
+  dnsNames:
+    - {{ longhorn_domain | default('longhorn.example.com') }}

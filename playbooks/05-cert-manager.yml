@@ -1,0 +1,45 @@
+---
+- name: 05 - Deploy cert-manager and Configure Let's Encrypt ClusterIssuers
+  hosts: kube-1
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Deploy cert-manager CRDs and controller components
+      ansible.builtin.command:
+        cmd: "/usr/local/bin/k3s kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/{{ cert_manager_version }}/cert-manager.yaml"
+      register: cert_manager_install
+      changed_when: "'created' in cert_manager_install.stdout or 'configured' in cert_manager_install.stdout"
+
+    - name: Wait for cert-manager controller deployments to be ready
+      ansible.builtin.command:
+        cmd: "/usr/local/bin/k3s kubectl rollout status deployment/{{ item }} -n cert-manager --timeout=180s"
+      loop:
+        - cert-manager
+        - cert-manager-cainjector
+        - cert-manager-webhook
+      changed_when: false
+
+    - name: Deploy Let's Encrypt ClusterIssuers
+      ansible.builtin.template:
+        src: ../templates/cert-manager-issuers.yaml.j2
+        dest: /var/lib/rancher/k3s/server/manifests/cert-manager-issuers.yaml
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Deploy Traefik hardened TLS options (TLS 1.2+ and modern ciphers)
+      ansible.builtin.template:
+        src: ../templates/traefik-tls-options.yaml.j2
+        dest: /var/lib/rancher/k3s/server/manifests/traefik-tls-options.yaml
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Wait for ClusterIssuer to be ready
+      ansible.builtin.command:
+        cmd: "/usr/local/bin/k3s kubectl wait --for=condition=Ready clusterissuer/{{ acme_issuer_prod | default('letsencrypt-prod') }} --timeout=60s"
+      register: issuer_status
+      retries: 5
+      delay: 5
+      until: issuer_status.rc == 0
+      changed_when: false

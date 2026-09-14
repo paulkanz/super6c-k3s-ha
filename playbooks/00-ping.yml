@@ -1,0 +1,22 @@
+---
+- name: 00 - Verify Ansible Connectivity and Sudo Access
+  hosts: k3s_cluster
+  gather_facts: true
+  become: true
+  tasks:
+    - name: Ping host
+      ansible.builtin.ping:
+
+    - name: Confirm passwordless sudo access
+      ansible.builtin.command: whoami
+      register: whoami_result
+      changed_when: false
+      failed_when: whoami_result.stdout != 'root'
+
+    - name: Display host platform details
+      ansible.builtin.debug:
+        msg: >-
+          Host: {{ inventory_hostname }} |
+          OS: {{ ansible_distribution }} {{ ansible_distribution_version }} ({{ ansible_architecture }}) |
+          Kernel: {{ ansible_kernel }} |
+          Total RAM: {{ (ansible_memtotal_mb / 1024) | round(2) }} GiB

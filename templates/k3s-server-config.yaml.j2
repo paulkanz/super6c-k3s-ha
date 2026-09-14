@@ -1,0 +1,28 @@
+{% if k3s_init_node | default(false) %}
+cluster-init: true
+{% else %}
+server: "https://{{ k3s_vip }}:6443"
+{% endif %}
+token: "{{ k3s_token }}"
+tls-san:
+  - "{{ k3s_vip }}"
+  - "kube-vip"
+  - "127.0.0.1"
+{% for host in groups['k3s_servers'] %}
+  - "{{ host }}"
+  - "{{ hostvars[host].node_ip }}"
+{% endfor %}
+write-kubeconfig-mode: "0644"
+cluster-cidr: "{{ cluster_cidr }}"
+service-cidr: "{{ service_cidr }}"
+cluster-dns: "{{ cluster_dns }}"
+protect-kernel-defaults: {{ k3s_protect_kernel_defaults | lower }}
+secrets-encryption: {{ k3s_secrets_encryption | lower }}
+kube-apiserver-arg:
+  - "audit-log-path=/var/lib/rancher/k3s/server/logs/audit.log"
+  - "audit-policy-file=/etc/rancher/k3s/audit-policy.yaml"
+  - "audit-log-maxbackup=10"
+  - "audit-log-maxsize=100"
+etcd-snapshot-schedule-cron: "{{ k3s_etcd_snapshot_schedule_cron | default('0 */6 * * *') }}"
+etcd-snapshot-retention: {{ k3s_etcd_snapshot_retention | default(28) }}
+etcd-snapshot-compress: {{ k3s_etcd_snapshot_compress | default(true) | lower }}

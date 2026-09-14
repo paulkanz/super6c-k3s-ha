@@ -1,0 +1,50 @@
+---
+# ==============================================================================
+# INDUSTRIAL IOT & EDGE COMPUTING REFERENCE ARCHITECTURE
+# ANSIBLE VAULT SECRETS (STUB / TEMPLATE CONFIGURATION)
+# ==============================================================================
+# INSTRUCTIONS FOR INITIAL SETUP & ENCRYPTION:
+#
+# 1. Update the stub values below with your desired passwords and secrets.
+# 2. Generate a local vault password file (keep this out of Git via .gitignore):
+#      openssl rand -base64 32 > .vault_pass
+#      chmod 600 .vault_pass
+# 3. Encrypt this file using Ansible Vault:
+#      ansible-vault encrypt inventory/group_vars/all/vault.yml --vault-password-file .vault_pass
+# 4. Uncomment 'vault_password_file = .vault_pass' in ansible.cfg
+# 5. To view or edit after encryption:
+#      ansible-vault view inventory/group_vars/all/vault.yml
+#      ansible-vault edit inventory/group_vars/all/vault.yml
+# ==============================================================================
+
+# Longhorn Distributed Storage Web UI Authentication
+# Web UI username and password (used by verification playbooks & administrators)
+vault_longhorn_admin_user: "kube-admin"
+vault_longhorn_admin_password: "CHANGEME_STRONG_LONGHORN_PASSWORD"
+
+# Bcrypt htpasswd string for Traefik IngressRoute basicAuth middleware.
+# Generate on your workstation via:
+#   htpasswd -nb -B kube-admin "CHANGEME_STRONG_LONGHORN_PASSWORD"
+# Example output format: kube-admin:$2y$05$...
+vault_longhorn_htpasswd: 'kube-admin:$2y$05$dummyhashforgithubshowcaseCHANGEME'
+
+# ACME SSL / Let's Encrypt Certificate Expiry Alerts
+vault_acme_email: "admin@example.com"
+
+# Base Ingress Domain (e.g., yourdomain.com)
+vault_base_domain: "example.com"
+
+# Cluster Join Shared Secret Token (Overrides default token in vars.yml)
+# Used by k3s server and agent nodes to securely authenticate and join the cluster
+vault_k3s_token: "k3s-ha-cluster-secret-token-CHANGEME"
+
+# Edge Application (NodeApp) Session Secret & Database Credentials
+# Generate a cryptographically secure 64-character hex secret:
+#   openssl rand -hex 32
+vault_nodeapp_session_secret: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+
+# Database Host and Credentials
+vault_nodeapp_db_host: "192.168.1.150"
+vault_nodeapp_db_name: "telemetry_db"
+vault_nodeapp_db_user: "telemetry_user"
+vault_nodeapp_db_password: "CHANGEME_STRONG_DB_PASSWORD"

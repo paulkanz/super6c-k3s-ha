@@ -1,0 +1,12 @@
+apiVersion: traefik.io/v1alpha1
+kind: TLSOption
+metadata:
+  name: default
+  namespace: kube-system
+spec:
+  minVersion: {{ traefik_tls_min_version | default('VersionTLS12') }}
+  cipherSuites:
+{% for cipher in traefik_tls_cipher_suites %}
+    - {{ cipher }}
+{% endfor %}
+  sniStrict: {{ traefik_tls_sni_strict | default(false) | lower }}

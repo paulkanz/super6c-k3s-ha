@@ -1,0 +1,47 @@
+---
+- name: Teardown and Reset K3s Cluster
+  hosts: k3s_cluster
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Run server uninstaller if present
+      ansible.builtin.command: /usr/local/bin/k3s-uninstall.sh
+      failed_when: false
+      when: "'k3s_servers' in group_names"
+
+    - name: Run agent uninstaller if present
+      ansible.builtin.command: /usr/local/bin/k3s-agent-uninstall.sh
+      failed_when: false
+      when: "'k3s_agents' in group_names"
+
+    - name: Remove lingering directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/rancher
+        - /var/lib/rancher
+        - /var/lib/kubelet
+        - /var/lib/longhorn
+        - /run/k3s
+        - /run/flannel
+
+    - name: Remove dangling CNI and flannel network interfaces
+      ansible.builtin.shell: |
+        ip link set cni0 down 2>/dev/null || true
+        ip link delete cni0 2>/dev/null || true
+        ip link set flannel.1 down 2>/dev/null || true
+        ip link delete flannel.1 2>/dev/null || true
+      changed_when: false
+      failed_when: false
+
+    - name: Reset iptables / nftables rules
+      ansible.builtin.shell: |
+        iptables -F 2>/dev/null || true
+        iptables -X 2>/dev/null || true
+        iptables -t nat -F 2>/dev/null || true
+        iptables -t nat -X 2>/dev/null || true
+        iptables -t mangle -F 2>/dev/null || true
+        iptables -t mangle -X 2>/dev/null || true
+      changed_when: false
+      failed_when: false

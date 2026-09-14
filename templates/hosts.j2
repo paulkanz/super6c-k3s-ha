@@ -1,0 +1,12 @@
+127.0.0.1 localhost
+::1 localhost ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+
+# Cluster Virtual IP
+{{ k3s_vip }} kube-vip
+
+# Cluster Nodes
+{% for host in groups['k3s_cluster'] %}
+{{ hostvars[host].node_ip }} {{ host }} {{ host }}.local
+{% endfor %}

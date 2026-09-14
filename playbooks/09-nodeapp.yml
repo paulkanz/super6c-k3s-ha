@@ -1,0 +1,88 @@
+---
+- name: 09 - Deploy and Configure NodeApp on K3s Cluster
+  hosts: kube-1
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Deploy NodeApp manifests to K3s server auto-deploy directory
+      ansible.builtin.template:
+        src: ../templates/nodeapp.yaml.j2
+        dest: /var/lib/rancher/k3s/server/manifests/nodeapp.yaml
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Wait for NodeApp deployment to be successfully rolled out
+      ansible.builtin.command:
+        cmd: /usr/local/bin/k3s kubectl rollout status deployment/nodeapp -n nodeapp --timeout=180s
+      register: rollout_result
+      until: rollout_result.rc == 0
+      retries: 12
+      delay: 5
+      changed_when: false
+
+    - name: Query NodeApp pod status
+      ansible.builtin.command:
+        cmd: /usr/local/bin/k3s kubectl get pods -n nodeapp -o wide
+      register: nodeapp_pods
+      changed_when: false
+
+    - name: Query Traefik IngressRoute status
+      ansible.builtin.command:
+        cmd: /usr/local/bin/k3s kubectl get ingressroutes.traefik.io -n nodeapp
+      register: nodeapp_ingress
+      changed_when: false
+
+    - name: Query NodeApp PodDisruptionBudget status
+      ansible.builtin.command:
+        cmd: /usr/local/bin/k3s kubectl get pdb -n nodeapp nodeapp-pdb
+      register: nodeapp_pdb
+      until: nodeapp_pdb.rc == 0
+      retries: 10
+      delay: 2
+      changed_when: false
+
+    - name: Query NodeApp NetworkPolicy status
+      ansible.builtin.command:
+        cmd: /usr/local/bin/k3s kubectl get networkpolicy -n nodeapp nodeapp-isolation
+      register: nodeapp_netpol
+      until: nodeapp_netpol.rc == 0
+      retries: 10
+      delay: 2
+      changed_when: false
+
+    - name: Query NodeApp HorizontalPodAutoscaler status
+      ansible.builtin.command:
+        cmd: /usr/local/bin/k3s kubectl get hpa -n nodeapp nodeapp-hpa
+      register: nodeapp_hpa
+      until: nodeapp_hpa.rc == 0
+      retries: 10
+      delay: 2
+      changed_when: false
+
+    - name: Query NodeApp namespace PSA labels
+      ansible.builtin.command:
+        cmd: /usr/local/bin/k3s kubectl get ns nodeapp --show-labels
+      register: nodeapp_ns_labels
+      changed_when: false
+
+    - name: Display NodeApp deployment status and endpoints
+      ansible.builtin.debug:
+        msg:
+          - "================ NODEAPP DEPLOYMENT STATUS ================"
+          - "{{ nodeapp_pods.stdout_lines }}"
+          - "================ POD DISRUPTION BUDGET ===================="
+          - "{{ nodeapp_pdb.stdout_lines }}"
+          - "================ NETWORK POLICIES =========================="
+          - "{{ nodeapp_netpol.stdout_lines }}"
+          - "================ HORIZONTAL POD AUTOSCALER ================"
+          - "{{ nodeapp_hpa.stdout_lines }}"
+          - "================ NAMESPACE PSA LABELS ======================"
+          - "{{ nodeapp_ns_labels.stdout_lines }}"
+          - "================ INGRESS ROUTES ==========================="
+          - "{{ nodeapp_ingress.stdout_lines }}"
+          - "================ ACCESS URLS =============================="
+          - "Local Ingress (HTTP): http://{{ k3s_vip }}/nodeapp/temp"
+          - "Messages Endpoint:    http://{{ k3s_vip }}/nodeapp/messages"
+          - "AQI Endpoint:         http://{{ k3s_vip }}/nodeapp/aqi"
+          - "Domain (HTTPS/SSL):   https://{{ nodeapp_domain }}/nodeapp/temp"
