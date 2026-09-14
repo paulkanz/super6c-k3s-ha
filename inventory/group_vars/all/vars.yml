@@ -1,4 +1,6 @@
 ---
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+# Copyright (c) 2026 Paul Kanz <kanzpaul@gmail.com>
 # User and Python
 ansible_user: "{{ vault_ansible_user | default('admin') }}"
 ansible_python_interpreter: /usr/bin/python3

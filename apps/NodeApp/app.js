@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+// Copyright (c) 2026 Paul Kanz <kanzpaul@gmail.com>
 // ==============================================================================
 // Precision Viticulture IIoT Edge Telemetry Gateway
 // Reference Architecture for DeskPi Super6C K3s Cluster

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+// Copyright (c) 2026 Paul Kanz <kanzpaul@gmail.com>
 const telemetryService = require("../telemetryService");
 
 exports.list = function(req, res) {

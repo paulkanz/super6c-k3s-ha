@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+# Copyright (c) 2026 Paul Kanz <kanzpaul@gmail.com>
 # ==============================================================================
 # Script: copy-headlamp-token.sh
 # Purpose: Retrieve Headlamp admin RBAC token and copy directly to clipboard buffer

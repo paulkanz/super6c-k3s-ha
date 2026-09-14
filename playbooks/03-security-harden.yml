@@ -1,4 +1,6 @@
 ---
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+# Copyright (c) 2026 Paul Kanz <kanzpaul@gmail.com>
 - name: 03 - Apply NIST 800-53, SOC 2, and HITRUST Security Baseline
   hosts: k3s_cluster
   gather_facts: true

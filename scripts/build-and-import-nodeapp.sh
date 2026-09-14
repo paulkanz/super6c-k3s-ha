@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+# Copyright (c) 2026 Paul Kanz <kanzpaul@gmail.com>
 # ==============================================================================
 # Script: build-and-import-nodeapp.sh
 # Purpose: Build NodeApp ARM64 container image and import directly into K3s containerd
