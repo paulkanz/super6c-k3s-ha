@@ -89,7 +89,7 @@ flowchart TD
     end
 
     subgraph UI ["Dashboards & Visualization"]
-        GRAF["Grafana Dashboards"] -->|Read Fast Rollups (<50ms)| CAGGS
+        GRAF["Grafana Dashboards"] -->|"Read Fast Rollups (<50ms)"| CAGGS
         TB["ThingsBoard CE (Capped Heap)"] -->|Query Entities| PG
     end
 ```
