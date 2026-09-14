@@ -32,14 +32,14 @@ This project defines and implements a modern, cloud-native **Industrial IoT (IIo
 7. **Automated State Backup & Disaster Recovery**: Native, scheduled, gzip-compressed etcd snapshots with rolling quorum-safe restarts and Longhorn block replication.
 8. **IaC Security Static Analysis**: Continuous multi-engine verification utilizing Checkov, Ansible-Lint (`--profile safety`), and Trivy.
 9. **Voluntary Disruption Resilience & Zero-Trust Pod Microsegmentation**: Guaranteed uptime during node maintenance via `PodDisruptionBudget` (`minAvailable: 1`) and strict default-deny Layer 3/4 `NetworkPolicy` isolation.
-10. **Restricted Pod Security Admission, Dynamic Autoscaling & Topology Spread**: Enforced `restricted` PSA standard, read-only root filesystems, blocked API token mounting, HPA v2 autoscaling, and even blade spreading via `topologySpreadConstraints`.
+10. **Restricted Pod Security Admission, Dynamic Autoscaling & Topology Spread**: Enforced `restricted` PSA standard, read-only root filesystems, blocked API token mounting, HPA v2 autoscaling, and even node spreading via `topologySpreadConstraints`.
 11. **NIST / CIS Baseline Controls (P1-P5)**: Kernel audit rules (`auditd`), host intrusion prevention (`fail2ban`), legal notification banners (`/etc/issue.net`), UMASK 027, protocol/filesystem module blacklists, and default ServiceAccount token isolation across all namespaces.
 
 ### 1.3. Architectural Rationale & Physical Edge Constraints
 Standard enterprise data center assumptions do not apply to remote industrial edge computing environments (such as agricultural vineyards, pump stations, and off-grid facilities):
-1. **Low-SWaP Constraint (Size, Weight, and Power)**: A traditional 2U rack server (350W–600W, 75 dB, heavy heat dissipation) requires climate-controlled rooms and 240V AC power. The DeskPi Super6C blade cluster operates under a strict **<85W power budget** (idling at ~20W, peaking at ~45W), enabling 100% off-grid 24/7 autonomous operation powered solely by a 12V 200Ah LiFePO4 battery and 300W solar panel array with zero expectation of local utility electricity.
+1. **Low-SWaP Constraint (Size, Weight, and Power)**: A traditional 2U rack server (350W–600W, 75 dB, heavy heat dissipation) requires climate-controlled rooms and 240V AC power. The DeskPi Super6C multi-node cluster operates under a strict **<85W power budget** (idling at ~20W, peaking at ~45W), enabling 100% off-grid 24/7 autonomous operation powered solely by a 12V 200Ah LiFePO4 battery and 300W solar panel array with zero expectation of local utility electricity.
 2. **Industrial Silicon vs. Consumer Perception**: The architecture utilizes **Raspberry Pi Compute Module 4s (CM4)** rather than consumer Pi boards. Compute Modules interface directly over PCIe Gen 2 lanes to NVMe SSDs and eMMC (eliminating corruptible SD cards). The Broadcom BCM2711 SoC is rated for industrial operating environments (-20°C to +85°C) with guaranteed production availability through at least 2034, validated by industrial leaders including **Siemens** (Simatic IOT2050) and **Kunbus** (Revolution Pi).
-3. **Multi-Node Quorum vs. Single-Server SPOF**: A single enterprise server creates an unmitigated single point of failure. By distributing workloads across a 6-blade chassis with 3-node Raft consensus (`etcd`) and 3-way synchronous block replication (Longhorn), the cluster delivers enterprise-grade continuous availability with automated sub-3-second failover at a fraction of the capital and operational cost.
+3. **Multi-Node Quorum vs. Single-Server SPOF**: A single enterprise server creates an unmitigated single point of failure. By distributing workloads across a 6-node chassis with 3-node Raft consensus (`etcd`) and 3-way synchronous block replication (Longhorn), the cluster delivers enterprise-grade continuous availability with automated sub-3-second failover at a fraction of the capital and operational cost.
 
 ---
 
@@ -47,17 +47,17 @@ Standard enterprise data center assumptions do not apply to remote industrial ed
 
 ```mermaid
 graph TD
-    subgraph CHASSIS ["🖥️ Physical Chassis: DeskPi Super6C Mini-ITX Blade System"]
+    subgraph CHASSIS ["🖥️ Physical Chassis: DeskPi Super6C Mini-ITX Multi-Node System"]
         PSU["100% Off-Grid Solar & 12V Battery Bus<br/>(Native 12V-19V DC Input / ~20W-45W Fleet Draw)"]
         SWITCH["On-Board Gigabit Switch Backplane (Dual RJ45 External Uplinks)"]
         
-        subgraph CP_BLADES ["Control Plane Blades (Slots 1–3)"]
+        subgraph CP_NODES ["Control Plane Nodes (Slots 1–3)"]
             B1["Slot 1: kube-1 (192.168.1.138)<br/>CM4 4GB | 250GB M.2 NVMe"]
             B2["Slot 2: kube-2 (192.168.1.238)<br/>CM4 4GB | 250GB M.2 NVMe"]
             B3["Slot 3: kube-3 (192.168.1.185)<br/>CM4 4GB | 250GB M.2 NVMe"]
         end
 
-        subgraph WORKER_BLADES ["Worker & Storage Blades (Slots 4–6)"]
+        subgraph WORKER_NODES ["Worker & Storage Nodes (Slots 4–6)"]
             B4["Slot 4: kube-4 (192.168.1.198)<br/>CM4 4GB | 250GB M.2 NVMe"]
             B5["Slot 5: kube-5 (192.168.1.91)<br/>CM4 4GB | 250GB M.2 NVMe"]
             B6["Slot 6: kube-6 (192.168.1.102)<br/>CM4 4GB | 250GB M.2 NVMe"]
@@ -228,7 +228,7 @@ flowchart LR
   - Baseline Replica Count: 2 pods (minimum).
   - **Topology Spread Constraints**:
     - Replaced legacy heuristic `podAntiAffinity` with native `topologySpreadConstraints` across `kubernetes.io/hostname` with `maxSkew: 1` (`whenUnsatisfiable: ScheduleAnyway`).
-    - Guarantees even distribution of pods across worker blades (`kube-4`, `kube-5`, `kube-6`) during scale-up, maintenance, or rolling updates.
+    - Guarantees even distribution of pods across worker nodes (`kube-4`, `kube-5`, `kube-6`) during scale-up, maintenance, or rolling updates.
   - **Horizontal Pod Autoscaler (HPA v2)**:
     - API Version: `autoscaling/v2`.
     - Range: Min 2 replicas, Max 5 replicas (`nodeapp_hpa_min_replicas`, `nodeapp_hpa_max_replicas`).
@@ -273,7 +273,7 @@ flowchart LR
   - **`ConfigMap` (`nodeapp-config`)**: Injects non-sensitive configuration parameters (`DB_HOST`, `DB_PORT`, `DB_NAME`, `PORT`).
   - **`Secret` (`nodeapp-secret`)**: Injects encrypted sensitive credentials (`DB_USER`, `DB_PASSWORD`, `SESSION_SECRET`) sourced from Ansible Vault.
   - **Fail-Fast Startup Validation**: `app.js` enforces mandatory environment verification at boot; terminates immediately (`process.exit(1)`) if required variables are missing. Zero in-code plaintext secrets or fallback defaults exist in the repository.
-- **Image Distribution Pipeline**: Built on macOS via Docker Buildx for `linux/arm64` and streamed directly via SSH pipe into containerd on worker blades without requiring an external container registry (`scripts/build-and-import-nodeapp.sh`).
+- **Image Distribution Pipeline**: Built on macOS via Docker Buildx for `linux/arm64` and streamed directly via SSH pipe into containerd on worker nodes without requiring an external container registry (`scripts/build-and-import-nodeapp.sh`).
 
 
 
@@ -319,7 +319,7 @@ graph LR
 | **System & Comm Protection (SC)** | NIST: SC-5, SC-7, SC-8, CM-7<br>SOC 2: CC6.6, CC6.7<br>HITRUST: 08.b, 09.m<br>CIS Linux: 1.1, 3.4 | • UFW host firewall default-deny inbound<br>• Kernel ASLR level 2 & SYN flood cookies<br>• Traefik HSTS (1 yr), nosniff, SAMEORIGIN<br>• Explicit `set -o pipefail` across all shell tasks<br>• Pod-level Layer 3/4 egress/ingress isolation (block lateral movement)<br>• Blacklisted legacy filesystems (cramfs, hfs, udf) and protocols (dccp, sctp, rds, tipc) | `playbooks/03-security-harden.yml`<br>`templates/nodeapp.yaml.j2`<br>`playbooks/04-k3s-cluster.yml` |
 | **Cryptographic Protection (SC/CR)** | NIST: SC-12, SC-13, SC-28<br>SOC 2: CC6.1, CC6.7<br>HITRUST: 10.a, 10.b | • K3s Kubernetes secrets encrypted at rest (AES)<br>• Traefik TLSOption: TLS 1.2+ & modern AEAD ciphers<br>• cert-manager automated Let's Encrypt PKI<br>• All credentials stored in AES-256 Ansible Vault with zero plaintext fallbacks | `templates/k3s-server-config.yaml.j2`<br>`templates/traefik-tls-options.yaml.j2`<br>`playbooks/05-cert-manager.yml`<br>`inventory/group_vars/all/vault.yml` |
 | **Audit & Accountability (AU)** | NIST: AU-2, AU-3, AU-12<br>SOC 2: CC7.2, CC7.3<br>HITRUST: 09.aa, 09.ab<br>CIS Linux: 4.1 | • Kubernetes API server audit logging policy<br>• Comprehensive Linux kernel event auditing via `auditd` rules (`/etc/audit/rules.d/99-compliance.rules`) monitoring identity, sudoers, sshd, network, and unauthorized access<br>• Synchronized timestamps via `systemd-timesyncd` | `templates/audit-policy.yaml.j2`<br>`playbooks/03-security-harden.yml` |
-| **Contingency Planning (CP)** | NIST: CP-9, CP-10<br>SOC 2: CC7.3, A1.2<br>HITRUST: 08.i, 08.j | • Native K3s automated compressed etcd snapshots (every 6h, 28 retention)<br>• Longhorn 3-way synchronous block replication across physical worker blades<br>• `PodDisruptionBudget` (`minAvailable: 1`) preventing voluntary maintenance downtime | `templates/k3s-server-config.yaml.j2`<br>`playbooks/06-longhorn.yml`<br>`templates/nodeapp.yaml.j2` |
+| **Contingency Planning (CP)** | NIST: CP-9, CP-10<br>SOC 2: CC7.3, A1.2<br>HITRUST: 08.i, 08.j | • Native K3s automated compressed etcd snapshots (every 6h, 28 retention)<br>• Longhorn 3-way synchronous block replication across physical worker nodes<br>• `PodDisruptionBudget` (`minAvailable: 1`) preventing voluntary maintenance downtime | `templates/k3s-server-config.yaml.j2`<br>`playbooks/06-longhorn.yml`<br>`templates/nodeapp.yaml.j2` |
 | **System & Info Integrity (SI)** | NIST: SI-2, SI-4, SI-10<br>SOC 2: CC7.1, CC6.8<br>HITRUST: 07.b, 07.c<br>CIS Linux: 3.5 | • Automated security updates via `unattended-upgrades`<br>• Host intrusion prevention & brute-force rate limiting via `fail2ban`<br>• K3s `--protect-kernel-defaults` CIS enforcement<br>• Static IaC security gating (Checkov 12/12, Ansible-Lint production profile, Trivy 0 failures) | `playbooks/03-security-harden.yml`<br>`templates/k3s-server-config.yaml.j2`<br>Checkov / Ansible-Lint / Trivy |
 
 ---
@@ -389,14 +389,12 @@ To satisfy the Spec-Driven Development acceptance gate, all criteria below must 
 | **G14**| Zero-Trust Microsegmentation | Probe from unauthorized pod & egress leak test | Inter-namespace ingress dropped; unauthorized egress blocked; DB/DNS allowed | **PASSED** |
 | **G15**| Restricted PSS & PSA Enforcement | Test privileged pod creation in `nodeapp` | API admission server rejects non-compliant pod; read-only root verified | **PASSED** |
 | **G16**| Dynamic Autoscaling (HPA v2) | `kubectl get hpa -n nodeapp nodeapp-hpa` | Real-time CPU/Mem metrics collected; dynamic 2-5 replica range | **PASSED** |
-| **G17**| Mathematical Topology Spread | `kubectl get pods -n nodeapp -o wide` | Replicas distributed with `maxSkew: 1` across worker blades | **PASSED** |
+| **G17**| Mathematical Topology Spread | `kubectl get pods -n nodeapp -o wide` | Replicas distributed with `maxSkew: 1` across worker nodes | **PASSED** |
 | **G18**| Kernel Audit Rules Enforcement | `auditctl -l` on all cluster nodes | 18 rules active (identity, sudoers, sshd, network, unauthorized access) | **PASSED** |
 | **G19**| Host Intrusion Defense (`fail2ban`)| `fail2ban-client status sshd` on all nodes | SSH jail active, systemd backend, management IPs whitelisted | **PASSED** |
 | **G20**| System Warning Banner & Umask | Inspect `/etc/issue.net` & `/etc/login.defs` | Legal notice banner active; `UMASK 027` enforced | **PASSED** |
 | **G21**| Attack Surface Module Blacklist | `modprobe -n -v cramfs` / `dccp` on nodes | Legacy filesystems and protocols blocked (`install /bin/true`) | **PASSED** |
 | **G22**| ServiceAccount Token Isolation | `kubectl get sa default -A -o yaml` | `automountServiceAccountToken: false` on default SAs across namespaces | **PASSED** |
-
-
 
 ---
 
@@ -410,7 +408,7 @@ To satisfy the Spec-Driven Development acceptance gate, all criteria below must 
    - **ITEM-002**: Automated Rolling Node Maintenance Playbook (`playbooks/maintenance-reboot.yml`) respecting PDB.
    - **ITEM-003**: In-Cluster Automated CIS Benchmark Compliance Scanning (`kube-bench` CronJob).
 2. **Phase 2 — Single-Tenant IoT & Telemetry Platform (ChirpStack & ThingsBoard)**:
-   - Deployment of ChirpStack v4, ThingsBoard Community Edition, and PostgreSQL 16 + TimescaleDB directly on the 6-blade Super6C cluster.
+   - Deployment of ChirpStack v4, ThingsBoard Community Edition, and PostgreSQL 16 + TimescaleDB directly on the 6-node Super6C cluster.
    - Micro-batch ingestion pipeline (200–500 rows/insert) buffering through NATS JetStream / Mosquitto MQTT.
    - Deep database and JVM performance optimizations (Local NVMe PVs, JIT disabled, Continuous Aggregates, 7-day Columnar Compression, and zram compressed swap). Reference: [`docs/PHASE_2_CHIRPSTACK_THINGSBOARD_PERFORMANCE.md`](PHASE_2_CHIRPSTACK_THINGSBOARD_PERFORMANCE.md) and [`docs/IOT_LORAWAN_STACK_ARCHITECTURE.md`](IOT_LORAWAN_STACK_ARCHITECTURE.md).
 3. **Phase 3 — Upstream Origin Shielding**:

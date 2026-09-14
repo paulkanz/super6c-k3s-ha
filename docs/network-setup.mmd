@@ -35,8 +35,8 @@ flowchart TB
     end
 
     %% HARDWARE LAYER
-    subgraph CHASSIS ["🖥️ HARDWARE: DeskPi Super6C Mini-ITX Blade Chassis (100% Off-Grid Solar & 12V LiFePO4 Battery)"]
-        SWITCH["<b>Integrated Gigabit Switch Backplane</b><br/>Dual RJ45 Uplinks to Network | Inter-blade line rate routing"]
+    subgraph CHASSIS ["🖥️ HARDWARE: DeskPi Super6C Mini-ITX Multi-Node Chassis (100% Off-Grid Solar & 12V LiFePO4 Battery)"]
+        SWITCH["<b>Integrated Gigabit Switch Backplane</b><br/>Dual RJ45 Uplinks to Network | Inter-node line rate routing"]
 
         subgraph K3S_INGRESS ["K3s High Availability & Ingress Layer"]
             VIP["<b>kube-vip Floating Layer 2 VIP: 192.168.1.130</b><br/>Ports: 6443 (API), 80 (HTTP), 443 (HTTPS), 8080/8081 (UIs)"]

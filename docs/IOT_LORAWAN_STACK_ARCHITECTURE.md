@@ -2,7 +2,7 @@
 ## Deploying Sensor Ingestion, Message Brokers, and Time-Series Visualization on K3s
 
 **Date:** 2026-09-12  
-**Target Cluster:** 6x Raspberry Pi CM4 (DeskPi Super6C 6-Blade ARM64 Cluster)  
+**Target Cluster:** 6x Raspberry Pi CM4 (DeskPi Super6C 6-Node ARM64 Cluster)  
 **Supported Protocols:** LoRaWAN 1.0.x / 1.1.x, MQTT / MQTTS (TCP 1883/8883), Basic Station (WSS), HTTP/Webhooks  
 
 ---
@@ -21,14 +21,14 @@ The IoT ecosystem evaluates across four functional layers:
 
 | Application | Primary Function | K8s Deployment Ease | Memory Footprint | Architecture Support | Cluster Tier Placement | Evaluation Verdict |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **ChirpStack v4** | LoRaWAN Network & App Server | ⭐⭐⭐⭐⭐ **Very Easy** (Helm / K8s Manifests) | **Ultra-Light** (~50–150 MB, Rust/Go) | ✅ Native ARM64 | **Worker Blades (K4–K6)**<br/>DB on Longhorn NVMe | **Primary Choice for LoRaWAN**. Extremely fast, minimal resource consumption, native PostgreSQL/Redis backend. |
-| **ThingsBoard CE** | Turnkey IoT Portal (Devices, Rules, Graphs) | ⭐⭐⭐⭐☆ **Moderate** (Official Helm Chart) | **Heavy** (~1.5–3.0 GB, Java JVM) | ✅ Native ARM64 | **Worker Blade (K4–K6)**<br/>DB on Longhorn NVMe | **Best All-in-One Solution**. Out-of-the-box widgets, centralized device/asset management, automated irrigation rule engine, and RPC device downlinks. Requires dedicated pod memory limits. |
-| **The Things Stack (TTS / TTN)** | LoRaWAN Network Server | ⭐⭐☆☆☆ **Complex** (Multi-service microservices) | **Medium-High** (~1.0–2.0 GB, Go) | ✅ Native ARM64 | **Worker Blades (K4–K6)** | Overly complex for compact edge / enterprise clusters unless public TTN peering is strictly required. |
-| **Eclipse Mosquitto** | Lightweight MQTT Broker | ⭐⭐⭐⭐⭐ **Trivial** (Single Pod / Helm) | **Ultra-Light** (<30 MB, C) | ✅ Native ARM64 | **Worker Blades (K4–K6)** | **Ideal standard MQTT broker** for low-to-medium volume sensor ingestion (<10,000 msgs/sec). |
-| **EMQX** | Clustered Distributed MQTT Broker | ⭐⭐⭐⭐☆ **Easy** (Official K8s Operator) | **Medium** (~250–500 MB, Erlang) | ✅ Native ARM64 | **Worker Blades (K4–K6)** | **Best for High Availability**. Features native clustering, web UI, built-in SQL rule engine, and data bridges. |
-| **Node-RED** | Visual Pipeline & Payload Decoder | ⭐⭐⭐⭐⭐ **Very Easy** (Deployment / Helm) | **Light** (~150–300 MB, Node.js) | ✅ Native ARM64 | **Worker Blades (K4–K6)** | **Essential Middleware**. Converts arbitrary vendor binary/hex sensor payloads into clean JSON formats. |
-| **TimescaleDB** | Time-Series Relational Storage | ⭐⭐⭐⭐⭐ **Easy** (CloudNativePG / Manifests) | **Flexible** (~1.0–2.5 GB buffer cache) | ✅ Native ARM64 | **Worker Blades (Longhorn NVMe)** | **Gold Standard Storage**. PostgreSQL 16 hypertable engine with 90%+ columnar compression and continuous aggregates. |
-| **Grafana** | Telemetry Visualization & Alerting | ⭐⭐⭐⭐⭐ **Trivial** (Mature Helm Chart) | **Light** (~150–250 MB, Go) | ✅ Native ARM64 | **Worker Blades (K4–K6)** | **Gold Standard Dashboards**. Fast rendering, deep PostgreSQL/TimescaleDB/MQTT plugin support, alert routing. |
+| **ChirpStack v4** | LoRaWAN Network & App Server | ⭐⭐⭐⭐⭐ **Very Easy** (Helm / K8s Manifests) | **Ultra-Light** (~50–150 MB, Rust/Go) | ✅ Native ARM64 | **Worker Nodes (K4–K6)**<br/>DB on Longhorn NVMe | **Primary Choice for LoRaWAN**. Extremely fast, minimal resource consumption, native PostgreSQL/Redis backend. |
+| **ThingsBoard CE** | Turnkey IoT Portal (Devices, Rules, Graphs) | ⭐⭐⭐⭐☆ **Moderate** (Official Helm Chart) | **Heavy** (~1.5–3.0 GB, Java JVM) | ✅ Native ARM64 | **Worker Nodes (K4–K6)**<br/>DB on Longhorn NVMe | **Best All-in-One Solution**. Out-of-the-box widgets, centralized device/asset management, automated irrigation rule engine, and RPC device downlinks. Requires dedicated pod memory limits. |
+| **The Things Stack (TTS / TTN)** | LoRaWAN Network Server | ⭐⭐☆☆☆ **Complex** (Multi-service microservices) | **Medium-High** (~1.0–2.0 GB, Go) | ✅ Native ARM64 | **Worker Nodes (K4–K6)** | Overly complex for compact edge / enterprise clusters unless public TTN peering is strictly required. |
+| **Eclipse Mosquitto** | Lightweight MQTT Broker | ⭐⭐⭐⭐⭐ **Trivial** (Single Pod / Helm) | **Ultra-Light** (<30 MB, C) | ✅ Native ARM64 | **Worker Nodes (K4–K6)** | **Ideal standard MQTT broker** for low-to-medium volume sensor ingestion (<10,000 msgs/sec). |
+| **EMQX** | Clustered Distributed MQTT Broker | ⭐⭐⭐⭐☆ **Easy** (Official K8s Operator) | **Medium** (~250–500 MB, Erlang) | ✅ Native ARM64 | **Worker Nodes (K4–K6)** | **Best for High Availability**. Features native clustering, web UI, built-in SQL rule engine, and data bridges. |
+| **Node-RED** | Visual Pipeline & Payload Decoder | ⭐⭐⭐⭐⭐ **Very Easy** (Deployment / Helm) | **Light** (~150–300 MB, Node.js) | ✅ Native ARM64 | **Worker Nodes (K4–K6)** | **Essential Middleware**. Converts arbitrary vendor binary/hex sensor payloads into clean JSON formats. |
+| **TimescaleDB** | Time-Series Relational Storage | ⭐⭐⭐⭐⭐ **Easy** (CloudNativePG / Manifests) | **Flexible** (~1.0–2.5 GB buffer cache) | ✅ Native ARM64 | **Worker Nodes (Longhorn NVMe)** | **Gold Standard Storage**. PostgreSQL 16 hypertable engine with 90%+ columnar compression and continuous aggregates. |
+| **Grafana** | Telemetry Visualization & Alerting | ⭐⭐⭐⭐⭐ **Trivial** (Mature Helm Chart) | **Light** (~150–250 MB, Go) | ✅ Native ARM64 | **Worker Nodes (K4–K6)** | **Gold Standard Dashboards**. Fast rendering, deep PostgreSQL/TimescaleDB/MQTT plugin support, alert routing. |
 
 ### End-to-End Field-to-Cloud Telemetry Architecture
 
@@ -55,7 +55,7 @@ flowchart TD
         MQTT_PORT["K3s Klipper LoadBalancer<br/>(TCP 1883 / 8883 on 192.168.1.130)"]
     end
 
-    subgraph APPS ["Application & Telemetry Layer (Worker Blades K4–K6)"]
+    subgraph APPS ["Application & Telemetry Layer (Worker Nodes K4–K6)"]
         CS["ChirpStack v4<br/>(LoRaWAN Network Server)"]
         EMQX_SVC["EMQX / Mosquitto<br/>(MQTT Broker)"]
         NODERED["Node-RED<br/>(Payload Decoding & Routing)"]
@@ -97,7 +97,7 @@ flowchart TD
         EXT_SENSORS["Direct MQTT / CoAP / HTTP Sensors"]
     end
 
-    subgraph CLUSTER ["K3s Kubernetes Cluster (Super6C Worker Blades)"]
+    subgraph CLUSTER ["K3s Kubernetes Cluster (Super6C Worker Nodes)"]
         CS["ChirpStack v4<br/>(LoRaWAN Network Server)"]
         TB["ThingsBoard Community Edition<br/>(StatefulSet / Deployment)"]
         TBPG["PostgreSQL 16 + TimescaleDB<br/>(Longhorn Replicated NVMe)"]
@@ -251,7 +251,7 @@ To provision equivalent enterprise infrastructure in Amazon Web Services (US Eas
 
 ### 7.4. Financial TCO Comparison
 
-| Dimension | AWS Cloud (EKS or Native) | DeskPi Super6C 6-Blade Edge Cluster |
+| Dimension | AWS Cloud (EKS or Native) | DeskPi Super6C 6-Node Edge Cluster |
 | :--- | :--- | :--- |
 | **Monthly Operating Cost** | **$370.00 to $660.00+ / month** | **~$2.70 – $3.75 / month** *(electricity @ $0.15/kWh)* |
 | **Annual Operating Cost** | **$4,440.00 to $7,920.00+ / year** | **~$32.40 – $45.00 / year** |

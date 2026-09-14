@@ -51,7 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Parameterized target utilization thresholds (`nodeapp_hpa_cpu_target: 70%`, `nodeapp_hpa_memory_target: 80%`) backed by K3s Metrics Server.
   - **Mathematical Topology Spread Constraints**:
     - Replaced legacy heuristic `podAntiAffinity` with `topologySpreadConstraints` (`maxSkew: 1` across `kubernetes.io/hostname`, `whenUnsatisfiable: ScheduleAnyway`).
-    - Guarantees even replica distribution across worker blades (`kube-4`, `kube-5`, `kube-6`) during scale-up and maintenance.
+    - Guarantees even replica distribution across worker nodes (`kube-4`, `kube-5`, `kube-6`) during scale-up and maintenance.
   - **Ansible Automation & Verification**:
     - Updated `playbooks/09-nodeapp.yml` to query and report HPA metrics and namespace PSA enforcement labels in real time.
 
@@ -179,10 +179,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated `playbooks/08-verify.yml` to automatically retrieve and display Headlamp admin tokens, vault credentials, and HTTPS domain endpoints.
 - **Documentation**:
   - Added `OPENWRT_ALT_PORT_ROUTING.md` detailing OpenWrt destination NAT port translation (WAN 8443 $\rightarrow$ LAN 443), dual-cluster coexistence with legacy gateways, and ACME challenge handling.
-  - Added `CLUSTER_HARDWARE_STACK_ANALYSIS.md` detailing single-chassis 6-node DeskPi Super6C blade topology, multi-tier workload capacity and memory budgeting (IoT, Web, SSO, lightweight microservices), full infrastructure power budget (compute + WAN ONT/Gateway + OpenWrt router), 100% off-grid solar PV and 12V 200Ah LiFePO4 battery sizing (2,560Wh / multi-day autonomy), native DC power delivery, and automated low-voltage graceful shutdown.
+  - Added `CLUSTER_HARDWARE_STACK_ANALYSIS.md` detailing single-chassis 6-node DeskPi Super6C multi-node topology, multi-tier workload capacity and memory budgeting (IoT, Web, SSO, lightweight microservices), full infrastructure power budget (compute + WAN ONT/Gateway + OpenWrt router), 100% off-grid solar PV and 12V 200Ah LiFePO4 battery sizing (2,560Wh / multi-day autonomy), native DC power delivery, and automated low-voltage graceful shutdown.
   - Added `IOT_LORAWAN_STACK_ARCHITECTURE.md` detailing LoRaWAN, MQTT, ChirpStack v4, ThingsBoard CE, TTN, Node-RED, TimescaleDB, and Grafana deployment architectures, memory footprints, protocol ingress (WSS vs UDP), 200-tenant / 4,000-sensor scalability calculations, AWS cloud footprint & financial ROI ($820–$1,380/mo AWS vs $6.50/mo on-premises edge), and Internet bandwidth requirements.
   - Added `scripts/copy-headlamp-token.sh` helper utility leveraging `pbcopy` to extract the decoded Headlamp admin RBAC Bearer token directly into the macOS clipboard buffer.
-  - Updated `README.md` with DeskPi Super6C Mini-ITX slot mapping (Slots 1–6) and blade backplane networking details.
+  - Updated `README.md` with DeskPi Super6C Mini-ITX slot mapping (Slots 1–6) and backplane switch networking details.
 - **NodeApp Sensor Dashboard Migration to K3s**:
   - Parameterized `apps/NodeApp/app.js` to support dynamic environment variables (`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`) with backward-compatible defaults.
   - Created `templates/nodeapp.yaml.j2` defining the `nodeapp` Namespace, Secret, Deployment with anti-affinity across worker nodes, ClusterIP Service, Traefik IngressRoute, and cert-manager Certificate.

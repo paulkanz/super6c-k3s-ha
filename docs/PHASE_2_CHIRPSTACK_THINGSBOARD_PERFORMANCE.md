@@ -1,5 +1,5 @@
 # Phase 2: Database Performance Analysis & Mitigation Guide
-## Deploying ChirpStack v4, ThingsBoard CE & TimescaleDB on a Single 6-Blade DeskPi Super6C Cluster
+## Deploying ChirpStack v4, ThingsBoard CE & TimescaleDB on a Single 6-Node DeskPi Super6C Cluster
 
 **Date:** 2026-09-13  
 **Cluster Architecture:** 1x DeskPi Super6C Mini-ITX (6x Raspberry Pi CM4 4GB / 250GB NVMe)  
@@ -10,7 +10,7 @@
 
 ## 1. Executive Summary & Context
 
-As part of **Phase 2**, the cluster hosts the complete IoT and telemetry stack directly on the 6-blade **DeskPi Super6C** without external database servers. This delivers an autonomous, low-power edge appliance suitable for remote field stations (vineyards, industrial plants, microgrids) capable of operating on solar/battery power.
+As part of **Phase 2**, the cluster hosts the complete IoT and telemetry stack directly on the 6-node **DeskPi Super6C** without external database servers. This delivers an autonomous, low-power edge appliance suitable for remote field stations (vineyards, industrial plants, microgrids) capable of operating on solar/battery power.
 
 Running high-volume stateful database engines (PostgreSQL 16, TimescaleDB) and JVM-based platforms (ThingsBoard CE) on compact ARM64 compute modules requires proactive performance engineering. This document details the physical constraints, identified performance bottlenecks, and verified mitigation strategies to achieve enterprise-grade reliability and high ingestion throughput.
 
@@ -18,10 +18,10 @@ Running high-volume stateful database engines (PostgreSQL 16, TimescaleDB) and J
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
 │                     SUPER6C WORKLOAD PLACEMENT & STORAGE TOPOLOGY                      │
 ├────────────────────────────────────────────────────┬───────────────────────────────────┤
-│ CONTROL PLANE BLADES (Isolated etcd Quorum)        │ WORKER BLADES (Compute & Storage) │
-│ • Blade K1: kube-1 (etcd leader / API Server)      │ • Blade K4: ChirpStack + EMQX     │
-│ • Blade K2: kube-2 (etcd follower / API Server)    │ • Blade K5: ThingsBoard + Redis   │
-│ • Blade K3: kube-3 (etcd follower / API Server)    │ • Blade K6: TimescaleDB / DB Mesh │
+│ CONTROL PLANE NODES (Isolated etcd Quorum)         │ WORKER NODES (Compute & Storage)  │
+│ • Node K1: kube-1 (etcd leader / API Server)       │ • Node K4: ChirpStack + EMQX      │
+│ • Node K2: kube-2 (etcd follower / API Server)     │ • Node K5: ThingsBoard + Redis    │
+│ • Node K3: kube-3 (etcd follower / API Server)     │ • Node K6: TimescaleDB / DB Mesh  │
 │ Dedicated NVMe: OS + Local etcd WAL only           │ Dedicated NVMe: Longhorn / LocalPV│
 └────────────────────────────────────────────────────┴───────────────────────────────────┘
 ```
@@ -30,12 +30,12 @@ Running high-volume stateful database engines (PostgreSQL 16, TimescaleDB) and J
 
 ## 2. Physical Edge Hardware Constraints
 
-| Hardware Dimension | Specification per Compute Module | Cluster Total (6 Blades) | Operational Implication |
+| Hardware Dimension | Specification per Compute Module | Cluster Total (6 Nodes) | Operational Implication |
 | :--- | :--- | :--- | :--- |
 | **System Memory** | **4 GB LPDDR4** (soldered, non-expandable) | **24 GB RAM** | System overhead (OS, `k3s`, `containerd`, Longhorn CSI) consumes ~1.1 GB. Net allocatable RAM on worker compute modules is **~2.5–2.8 GB per compute module**. |
 | **CPU Silicon** | **Broadcom BCM2711** (Quad-Core Cortex-A72 @ 1.5 GHz) | **24 Cores** | ARMv8 64-bit out-of-order execution; lower single-threaded IPC than desktop x86; sensitive to heavy JIT compilation. |
 | **Local Storage** | **250 GB M.2 NVMe SSD** (PCIe Gen 2 x1) | **1.5 TB NVMe** | Dedicated PCIe bus yields ~400–450 MB/s sequential and **50,000+ random IOPS**; zero SD card reliability risks. |
-| **Network Backplane**| **Onboard 1 Gbps Switch IC** | **1 Gbps East-West** | Interconnects all 6 blades at wire speed across PCB traces; physical ceiling for distributed storage replication. |
+| **Network Backplane**| **Onboard 1 Gbps Switch IC** | **1 Gbps East-West** | Interconnects all 6 compute modules at wire speed across PCB traces; physical ceiling for distributed storage replication. |
 | **Power & Thermal** | ~3.5W idle, ~7.5W peak per compute module | **~20W idle, ~45W peak** | Dual active PWM fans keep module temperatures <55°C to avoid CPU thermal throttling (starts at 80°C). |
 
 ---
@@ -47,7 +47,7 @@ Running high-volume stateful database engines (PostgreSQL 16, TimescaleDB) and J
 * **Impact**: 
   * ThingsBoard CE runs on a Java Virtual Machine (JVM) that can easily consume 2.0–3.0 GB of memory if unconstrained.
   * PostgreSQL defaults that assume 16GB+ systems will allocate excessive buffer pools (`shared_buffers`) and sort memory (`work_mem`).
-  * If memory exceeds 4GB on a worker blade, the Linux kernel OOM killer terminates critical pods (e.g., PostgreSQL, Longhorn engine, or K3s agent).
+  * If memory exceeds 4GB on a worker node, the Linux kernel OOM killer terminates critical pods (e.g., PostgreSQL, Longhorn engine, or K3s agent).
 
 ### 3.2. Storage Latency & Write Amplification
 * **Constraint**: Longhorn 3-way synchronous block replication across the 1 Gbps backplane.
@@ -65,7 +65,7 @@ Running high-volume stateful database engines (PostgreSQL 16, TimescaleDB) and J
 ### 3.4. Control Plane `etcd` Quorum Interference
 * **Constraint**: `etcd` relies on sub-10ms disk write latency to maintain Raft consensus.
 * **Impact**:
-  * If database workloads are scheduled on control plane blades (`kube-1`–`kube-3`), heavy disk I/O bursts or memory contention can delay `etcd` heartbeat writes, triggering leader elections and cluster-wide flapping.
+  * If database workloads are scheduled on control plane nodes (`kube-1`–`kube-3`), heavy disk I/O bursts or memory contention can delay `etcd` heartbeat writes, triggering leader elections and cluster-wide flapping.
 
 ---
 
@@ -82,7 +82,7 @@ flowchart TD
         NATS -->|Batch 250-500 rows| WORKER["Node-RED / Go Ingestion Worker"]
     end
 
-    subgraph DB ["Optimized Database Layer (Worker Blades)"]
+    subgraph DB ["Optimized Database Layer (Worker Nodes)"]
         WORKER -->|Single Multi-Row INSERT| PG["PostgreSQL 16 + TimescaleDB<br/>(Local NVMe PV / Tuned Config)"]
         PG -->|Auto Background| CAGGS["Continuous Aggregates<br/>(1-Hour / 1-Day Rollups)"]
         PG -->|7-Day Background| COMP["Columnar Compression<br/>(90%+ Disk Savings)"]
@@ -96,10 +96,10 @@ flowchart TD
 
 ### 4.1. PostgreSQL 16 & TimescaleDB Parameter Tuning
 
-Deploy PostgreSQL with an optimized `postgresql.conf` specifically calibrated for 4GB CM4 blades:
+Deploy PostgreSQL with an optimized `postgresql.conf` specifically calibrated for 4GB CM4 compute modules:
 
 ```ini
-# Memory Configuration (Tuned for 4GB CM4 Blade)
+# Memory Configuration (Tuned for 4GB CM4 Compute Module)
 shared_buffers = 384MB                  # 15% of allocatable RAM; preserves room for OS & page cache
 work_mem = 8MB                          # Safe limit per sort/hash operation
 maintenance_work_mem = 64MB             # Memory for VACUUM, CREATE INDEX, and hypertable chunks
@@ -190,7 +190,7 @@ spec:
 ```
 
 * **Externalize All State**: Never use the embedded HSQLDB or bundled database inside the ThingsBoard container. Connect to the shared PostgreSQL 16 / TimescaleDB instance.
-* **Cap Java Heap**: Setting `-Xmx1792m` and container memory limit `2048Mi` leaves ~2GB of RAM on that blade for system daemons and adjacent microservices.
+* **Cap Java Heap**: Setting `-Xmx1792m` and container memory limit `2048Mi` leaves ~2GB of RAM on that compute module for system daemons and adjacent microservices.
 
 ---
 
@@ -230,13 +230,13 @@ spec:
 ### 4.6. Cluster Scheduling & Safety Rails
 
 #### 1. Control Plane Taints (etcd Protection)
-Ensure control plane blades never schedule database or application pods:
+Ensure control plane nodes never schedule database or application pods:
 ```bash
 kubectl taint nodes kube-1 kube-2 kube-3 node-role.kubernetes.io/control-plane:NoSchedule --overwrite
 ```
 
-#### 2. Worker Blade Affinities
-Optionally dedicate one worker blade (e.g., `kube-6`) to stateful database workloads:
+#### 2. Worker Node Affinities
+Optionally dedicate one worker node (e.g., `kube-6`) to stateful database workloads:
 ```yaml
 nodeSelector:
   kubernetes.io/hostname: kube-6
@@ -259,7 +259,7 @@ PERCENT=35  # Allocates ~1.4GB compressed RAM swap
 
 ## 5. Realistic Performance Envelope (Phase 2)
 
-Applying these mitigations enables the single 6-blade Super6C cluster to achieve the following operational envelope:
+Applying these mitigations enables the single 6-node Super6C cluster to achieve the following operational envelope:
 
 | Metric Dimension | Unoptimized / Default Baseline | Optimized Phase 2 Architecture |
 | :--- | :--- | :--- |
@@ -276,10 +276,10 @@ Applying these mitigations enables the single 6-blade Super6C cluster to achieve
 
 - [ ] **Host Prep**: Verify zram swap (`lz4`) enabled across `kube-4`, `kube-5`, and `kube-6`.
 - [ ] **Node Taints**: Confirm control plane taints active on `kube-1`, `kube-2`, and `kube-3`.
-- [ ] **Storage Classes**: Configure `local-storage` StorageClass mapped to `/mnt/nvme/data` on worker blades.
+- [ ] **Storage Classes**: Configure `local-storage` StorageClass mapped to `/mnt/nvme/data` on worker nodes.
 - [ ] **PostgreSQL Deployment**: Deploy PostgreSQL 16 + TimescaleDB with tuned `postgresql.conf` (`jit=off`, `shared_buffers=384MB`, `synchronous_commit=off`).
 - [ ] **Connection Pooling**: Deploy PgBouncer pod in `database` namespace capped at 20 backend connections.
 - [ ] **MQTT & LoRaWAN Core**: Deploy ChirpStack v4 and Eclipse Mosquitto on `kube-4` / `kube-5`.
 - [ ] **ThingsBoard CE**: Deploy ThingsBoard with JVM limits (`-Xms1024m -Xmx1792m`) connected to external PostgreSQL.
 - [ ] **Continuous Aggregates**: Create TimescaleDB continuous aggregate views and 7-day compression policy.
-- [ ] **Monitoring & Alerting**: Configure Prometheus alerts for CM4 blade temperature (>70°C) and node memory pressure (>85%).
+- [ ] **Monitoring & Alerting**: Configure Prometheus alerts for CM4 compute module temperature (>70°C) and node memory pressure (>85%).

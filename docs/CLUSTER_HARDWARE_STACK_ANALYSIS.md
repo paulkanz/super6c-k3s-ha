@@ -1,5 +1,5 @@
 # Cluster Hardware & Full-Stack Capacity Analysis
-## Architecture Guide for DeskPi Super6C 6-Blade ARM64 (CM4) Cluster
+## Architecture Guide for DeskPi Super6C 6-Node ARM64 (CM4) Cluster
 
 **Date:** 2026-09-12  
 **Cluster Fleet (6 Nodes):** 1x DeskPi Super6C (6x RPi CM4 4GB / 250GB NVMe)  
@@ -17,7 +17,7 @@ The cluster architecture is grounded in a compact, enterprise-grade edge platfor
 ├────────────────────────────────────────────────────────────────────────────────────────┤
 │   DeskPi Super6C Board (Mini-ITX Form Factor)                                          │
 │   ┌───────────────────────┬───────────────────────┐                                    │
-│   │ Control Plane Blades  │ Worker / Storage      │                                    │
+│   │ Control Plane Nodes   │ Worker / Storage      │                                    │
 │   │ ┌─────┬─────┬─────┐   │ ┌─────┬─────┬─────┐   │                                    │
 │   │ │ K1  │ K2  │ K3  │   │ │ K4  │ K5  │ K6  │   │                                    │
 │   │ └─────┴─────┴─────┘   │ └─────┴─────┴─────┘   │                                    │
@@ -30,7 +30,7 @@ The cluster architecture is grounded in a compact, enterprise-grade edge platfor
 └────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 1.1. DeskPi Super6C Mini-ITX Blade Architecture
+### 1.1. DeskPi Super6C Mini-ITX Multi-Node Architecture
 The **DeskPi Super6C** is a standard Mini-ITX form factor motherboard holding **6x Raspberry Pi Compute Module 4** boards:
 * **Integrated Gigabit Backplane**: An on-board Gigabit switch chip interconnects all 6 CM4 nodes directly across the PCB traces. Node-to-node East-West traffic runs at line rate without saturating external network switch ports.
 * **Dual Gigabit Uplinks**: Two external RJ45 ports provide redundant uplinks or Link Aggregation (LACP) to your main network switch.
@@ -41,7 +41,7 @@ The **DeskPi Super6C** is a standard Mini-ITX form factor motherboard holding **
 
 ## 2. Engineering Rationale: Industrial Edge Silicon vs. Data Center Overkill
 
-A common initial reaction to edge computing clusters utilizing the Raspberry Pi Compute Module 4 (CM4) is the assumption that it represents a "hobbyist" tier. In reality, this 6-blade edge cluster was deliberately engineered to resolve real-world edge operational constraints:
+A common initial reaction to edge computing clusters utilizing the Raspberry Pi Compute Module 4 (CM4) is the assumption that it represents a "hobbyist" tier. In reality, this 6-node edge cluster was deliberately engineered to resolve real-world edge operational constraints:
 
 ### 2.1. Industrial Silicon vs. Hobbyist Perception
 
@@ -50,11 +50,11 @@ A common initial reaction to edge computing clusters utilizing the Raspberry Pi 
 | **"Raspberry Pis rely on fragile SD cards that corrupt on power loss."** | **Zero SD cards.** Compute Module 4 (CM4) interfaces directly over dedicated PCIe Gen 2 bus lanes to M.2 NVMe solid-state storage and on-module eMMC. Power cuts do not corrupt the OS filesystem. | Industrial automation systems rely on eMMC wear-leveling and NVMe crash-consistent journaling. |
 | **"Mission-critical infrastructure cannot run on Raspberry Pi silicon."** | The Broadcom BCM2711 SoC is manufactured by Sony UK with a formal commercial availability commitment through at least **2034**. It is rated for industrial operating environments (-20°C to +85°C). | **Siemens** (Simatic IOT2050), **Kunbus** (Revolution Pi modular DIN-rail PLCs), and **OnLogic** (Factor 201/202) deploy CM4 in automotive assembly, rail transit, and municipal SCADA. |
 | **"Microcontroller field telemetry is amateurish compared to PLCs."** | Field sensor nodes run **dedicated 32-bit ultra-low-power silicon** (STMicroelectronics STM32, Nordic nRF52, ESP32-S3) paired with Semtech SX1262 LoRa transceivers. "Arduino" is merely the C++/FreeRTOS hardware abstraction layer (HAL). | **Arduino Pro** (Portenta Machine Control) and Tier-1 AgTech equipment manufacturers use this exact microcontroller toolchain. Nodes sleep at <15 µA for 3–5 years on battery/solar. |
-| **"Consumer boards lack enterprise thermal and mechanical stability."** | The DeskPi Super6C Mini-ITX chassis features a monolithic multi-layer PCB, integrated gigabit switch backplane, active dual-fan cooling, and standardized ATX power delivery. | Modular blade architectures isolate thermal hotspots and enable low-cost modular blade maintenance. |
+| **"Consumer boards lack enterprise thermal and mechanical stability."** | The DeskPi Super6C Mini-ITX chassis features a monolithic multi-layer PCB, integrated gigabit switch backplane, active dual-fan cooling, and standardized ATX power delivery. | Modular multi-node architectures isolate thermal hotspots and enable low-cost modular node replacement. |
 
 ### 2.2. The Physical Edge Constraint: Thermal, Power, and Economic Realities
 * **The "Enterprise Server" Trap**: Traditional 1U/2U rack servers (e.g., Dell PowerEdge, HPE ProLiant) draw **350W to 600W**, produce 75 dB of acoustic noise, generate significant heat, and require conditioned 240V AC power in climate-controlled server rooms. Placing one in a rural vineyard pump house or outdoor solar shed is non-viable.
-* **The 40-Watt Operational Advantage**: The entire six-blade Super6C cluster—comprising compute, RAM, six dedicated PCIe NVMe SSDs, and an integrated gigabit switch backplane—idles at **~20W** and peaks at **~45W**. When paired with a 12V 200Ah LiFePO4 battery and a 300W solar panel array, this ultra-efficient multi-node cluster runs 24/7/365 indefinitely off-grid, providing continuous autonomy even through consecutive cloudy days without requiring local utility electricity.
+* **The 40-Watt Operational Advantage**: The entire six-node Super6C cluster—comprising compute, RAM, six dedicated PCIe NVMe SSDs, and an integrated gigabit switch backplane—idles at **~20W** and peaks at **~45W**. When paired with a 12V 200Ah LiFePO4 battery and a 300W solar panel array, this ultra-efficient multi-node cluster runs 24/7/365 indefinitely off-grid, providing continuous autonomy even through consecutive cloudy days without requiring local utility electricity.
 * **Multi-Node Quorum vs. Single-Server SPOF**: A single $15,000 rack server is a single point of failure (one motherboard, one backplane, one OS kernel). The Super6C provides true **N+2 Raft consensus** (`etcd`) and **3-way synchronous NVMe replication** (Longhorn) with automated sub-3-second VIP failover. In the event of hardware failure, a damaged CM4 module costs just **~$55 for modular replacement**, avoiding costly proprietary server repairs.
 * **Autonomous Edge Survivability**: While cloud IoT platforms fail when weather or remote backhaul drops, this local cluster continues 100% of telemetry recording, TimescaleDB hypertable ingestion, and automated irrigation control loops completely air-gapped.
 
@@ -64,11 +64,11 @@ A common initial reaction to edge computing clusters utilizing the Raspberry Pi 
 
 | Resource Tier | 6-Node Super6C Cluster Specification | Architectural Impact & Operational Envelope |
 | :--- | :--- | :--- |
-| **Physical Nodes** | **6x Raspberry Pi Compute Module 4** (Blades K1–K6) | 3 Dedicated Control Plane nodes + 3 Worker/Storage nodes. |
+| **Physical Nodes** | **6x Raspberry Pi Compute Module 4** (Nodes K1–K6) | 3 Dedicated Control Plane nodes + 3 Worker/Storage nodes. |
 | **CPU Cores / Threads** | **24 Cores** (Quad-Core 64-bit ARM Cortex-A72 @ 1.5 GHz) | Hardware virtualization, parallel container builds, real-time analytics. |
 | **Total Memory** | **24 GB LPDDR4** (4 GB per compute module) | High-efficiency memory footprint; isolated per-module memory spaces. |
 | **Raw NVMe Storage** | **1.5 TB NVMe** (6x 250GB M.2 PCIe Gen 2 SSDs) | Dedicated direct PCIe bus per compute module; eliminates USB/SD card bottlenecks. |
-| **Longhorn Storage Pool** | **~750 GB Raw / ~250 GB Synchronously Replicated** | 3-way replicated block storage across worker blades (K4, K5, K6). |
+| **Longhorn Storage Pool** | **~750 GB Raw / ~250 GB Synchronously Replicated** | 3-way replicated block storage across worker nodes (K4, K5, K6). |
 | **Active Pod Capacity** | **60 to 80+ Active Pods** | Full edge multi-service orchestration (IoT, Ingress, Security, Storage). |
 | **Combined Power Draw** | **~20W Idle / ~35W–45W Full Peak Load** | Extreme thermal efficiency; operates 24/7 on low-cost battery/solar backup. |
 
@@ -109,9 +109,9 @@ Because this system is engineered for 100% off-grid operation with zero local ut
 
 ---
 
-## 4. Cross-Blade Fault Tolerance & Failure Domain Isolation
+## 4. Cross-Node Fault Tolerance & Failure Domain Isolation
 
-Within the single DeskPi Super6C enclosure, workloads achieve high availability through **blade-level failure domains** and Kubernetes anti-affinity rules (`kubernetes.io/hostname`):
+Within the single DeskPi Super6C enclosure, workloads achieve high availability through **node-level failure domains** and Kubernetes anti-affinity rules (`kubernetes.io/hostname`):
 
 ```mermaid
 flowchart TD
@@ -134,13 +134,13 @@ flowchart TD
 
 ### Failure Domain Resilience:
 1. **Control Plane Quorum (N+2 Consensus)**:
-   * Control plane blades (`kube-1`, `kube-2`, `kube-3`) run dedicated embedded `etcd` members.
-    * If any single control plane blade suffers hardware failure, the remaining two nodes maintain a healthy etcd quorum.
+   * Control plane nodes (`kube-1`, `kube-2`, `kube-3`) run dedicated embedded `etcd` members.
+    * If any single control plane node suffers hardware failure, the remaining two nodes maintain a healthy etcd quorum.
     * `kube-vip` automatically renegotiates the virtual IP (`192.168.1.130`) via ARP in **<3 seconds**, maintaining seamless API server access for external workloads.
  2. **Worker & Longhorn 3-Way Synchronous Replication**:
-    * Worker blades (`kube-4`, `kube-5`, `kube-6`) dedicate their local 250GB NVMe drives to Longhorn distributed storage.
-    * Longhorn enforces strict **host-level anti-affinity**: persistent volumes are synchronously replicated across all 3 worker blades (`Replica 1` on K4, `Replica 2` on K5, `Replica 3` on K6).
-    * If any worker blade drops, reads and writes continue seamlessly across the surviving replicas with zero data loss or application downtime.
+    * Worker nodes (`kube-4`, `kube-5`, `kube-6`) dedicate their local 250GB NVMe drives to Longhorn distributed storage.
+    * Longhorn enforces strict **host-level anti-affinity**: persistent volumes are synchronously replicated across all 3 worker nodes (`Replica 1` on K4, `Replica 2` on K5, `Replica 3` on K6).
+    * If any worker node drops, reads and writes continue seamlessly across the surviving replicas with zero data loss or application downtime.
  3. **Cost-Effective Modular Replacement**:
     * Because storage is replicated across the cluster and OS configurations are automated via Ansible, a failed CM4 module can be replaced for ~$55 during a scheduled maintenance window with zero data loss, avoiding expensive single-vendor repairs.
 
@@ -148,7 +148,7 @@ flowchart TD
 
 ## 5. Workload Architecture & Multi-Tier Service Capacity
 
-Workloads are cleanly separated across dedicated tiers to maximize reliability within the **~7.5–8.0 GB net allocatable memory footprint** across the 3 worker blades:
+Workloads are cleanly separated across dedicated tiers to maximize reliability within the **~7.5–8.0 GB net allocatable memory footprint** across the 3 worker nodes:
 
 ### Tier 1: Industrial IoT & Telemetry Platform (`nodesync`)
 * **Operational Envelope**: Real-time ingestion and state management for **10,000 to 40,000+ active field sensors**.
@@ -265,7 +265,7 @@ To provision equivalent high-availability multi-node compute and replicated NVMe
 
 * **Complete Turnkey Solar Edge Cluster ($1,845.00 Total CapEx)**:
   * **Payback Calculation**: `$1,845.00 Total CapEx` ÷ `$350.00/month (avg cloud OpEx)` = **~5.3 months** (~160 days)
-  * *The entire off-grid computing installation—including compute blades, NVMe storage, 300W solar panel array, MPPT charge controller, NEMA enclosure, and 200Ah LiFePO4 battery—reaches full economic payback in under 5.5 months.*
+  * *The entire off-grid computing installation—including compute modules, NVMe storage, 300W solar panel array, MPPT charge controller, NEMA enclosure, and 200Ah LiFePO4 battery—reaches full economic payback in under 5.5 months.*
 
 #### 3. 3-Year Total Cost of Ownership (TCO) Comparison
 

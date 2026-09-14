@@ -1,4 +1,4 @@
-# Industrial IoT (IIoT) & Edge Computing Reference Architecture (6x CM4 Blades)
+# Industrial IoT (IIoT) & Edge Computing Reference Architecture (6x CM4 Compute Modules)
 
 [![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm%20Noncommercial%201.0.0-red.svg?style=for-the-badge)](LICENSE)
 [![Ansible](https://img.shields.io/badge/Ansible-2.16+-EE0000?style=for-the-badge&logo=ansible&logoColor=white)](https://www.ansible.com/)
@@ -49,15 +49,15 @@ flowchart TD
     VIP <===> WorkerMesh
 ```
 
-### Node Role Matrix (DeskPi Super6C Mini-ITX Blade Chassis)
+### Node Role Matrix (DeskPi Super6C Mini-ITX Multi-Node Chassis)
 
 The 6 Raspberry Pi CM4 modules are housed in a **DeskPi Super6C Mini-ITX cluster board**, featuring an on-board Gigabit switch backplane, dual external RJ45 uplinks, individual M.2 NVMe PCIe slots, and a single ATX power feed.
 
-#### Physical Hardware & Blade Architecture
+#### Physical Hardware & Compute Module Architecture
 
-| Assembled Edge Appliance | 6x Raspberry Pi CM4 Blades | Dedicated M.2 NVMe Storage Tier |
+| Assembled Edge Appliance | 6x Raspberry Pi CM4 Compute Modules | Dedicated M.2 NVMe Storage Tier |
 | :---: | :---: | :---: |
-| <img src="docs/super6c-case.jpg" alt="DeskPi Super6C Assembled Enclosure" width="280"/> | <img src="docs/super6c-cm4.jpg" alt="6x Raspberry Pi CM4 Blades Installed" width="280"/> | <img src="docs/super6c-m2.jpg" alt="Dedicated M.2 NVMe PCIe Slots" width="280"/> |
+| <img src="docs/super6c-case.jpg" alt="DeskPi Super6C Assembled Enclosure" width="280"/> | <img src="docs/super6c-cm4.jpg" alt="6x Raspberry Pi CM4 Compute Modules Installed" width="280"/> | <img src="docs/super6c-m2.jpg" alt="Dedicated M.2 NVMe PCIe Slots" width="280"/> |
 | **DeskPi Super6C Enclosure**<br/>Mini-ITX form factor, dual active PWM cooling fans, single ATX/DC power feed | **Compute Tier (ARM64)**<br/>6x Raspberry Pi CM4 (24 cores Cortex-A72 @ 1.5GHz, 24GB LPDDR4) | **Storage Tier (PCIe NVMe)**<br/>6x M.2 NVMe SSDs on dedicated PCIe Gen 2 lanes (50,000+ IOPS) |
 
 | Hostname | IP Address | Hardware & Storage | K3s Role | Key Services |
@@ -72,9 +72,9 @@ The 6 Raspberry Pi CM4 modules are housed in a **DeskPi Super6C Mini-ITX cluster
 
 ### Architectural Decision: Why K3s Over Upstream Kubernetes (K8s)?
 
-Deploying standard upstream Kubernetes (`kubeadm` / K8s) on the DeskPi Super6C blade chassis was evaluated and deliberately rejected in favor of **K3s**:
+Deploying standard upstream Kubernetes (`kubeadm` / K8s) on the DeskPi Super6C multi-node chassis was evaluated and deliberately rejected in favor of **K3s**:
 
-1. **Hardware & Power Constraints**: The cluster operates on 6x Raspberry Pi CM4 blades (4GB RAM, Quad-Core Cortex-A72 @ 1.5GHz) housed in a compact Mini-ITX chassis. The entire system operates under a strict **<85W power budget** to support 100% off-grid 24/7 operation powered solely by a solar PV array and LiFePO4 battery storage, with zero dependency on local utility electricity.
+1. **Hardware & Power Constraints**: The cluster operates on 6x Raspberry Pi CM4 compute modules (4GB RAM, Quad-Core Cortex-A72 @ 1.5GHz) housed in a compact Mini-ITX chassis. The entire system operates under a strict **<85W power budget** to support 100% off-grid 24/7 operation powered solely by a solar PV array and LiFePO4 battery storage, with zero dependency on local utility electricity.
 2. **Upstream K8s is Heavy Overkill**: Upstream K8s control plane daemons (`kube-apiserver`, `controller-manager`, `scheduler`, standalone `etcd`, `kube-proxy`) consume **1.5 GiB – 2.0 GiB+ of idle RAM per node** (over 40%–50% of available memory on a 4GB CM4). Running standard K8s comfortably requires bulky, power-hungry x86 servers drawing 300W–500W+—completely defeating the low-SWaP (Size, Weight, and Power) edge appliance objective.
 3. **K3s is Lightweight & Fully Certified**: K3s delivers 100% CNCF-certified Kubernetes APIs in a single binary consuming only **~512 MiB of RAM**. This preserves **~3.5GB (85%+) of memory on each compute module** for distributed block storage (Longhorn), edge ingress (Traefik), and upcoming telemetry workloads (ChirpStack & ThingsBoard).
 
@@ -86,7 +86,7 @@ A common question regarding edge computing architectures is: *"Why deploy Raspbe
    - Traditional enterprise servers (e.g., Dell PowerEdge, HPE ProLiant) draw **350W–600W**, produce 75 dB of acoustic noise, generate significant heat, and require conditioned 240V AC power in climate-controlled server rooms.
    - Deploying rackmount servers into remote agricultural outbuildings, vineyard pump sheds, or off-grid solar enclosures is operationally and economically non-viable.
 2. **The 40-Watt Operational Advantage**:
-   - The entire six-blade Super6C cluster—comprising compute, RAM, six dedicated PCIe NVMe SSDs, and an integrated gigabit switch backplane—idles at **~20W** and peaks at **~45W**.
+   - The entire six-node Super6C cluster—comprising compute, RAM, six dedicated PCIe NVMe SSDs, and an integrated gigabit switch backplane—idles at **~20W** and peaks at **~45W**.
    - When paired with a 12V 200Ah LiFePO4 battery and a 300W solar panel array, this ultra-efficient multi-node cluster runs 24/7/365 indefinitely off-grid, providing continuous autonomy even through consecutive cloudy days without requiring local utility electricity.
 3. **Industrial Silicon (CM4) ≠ Consumer Hobbyist Pi**:
    - **Zero SD Cards**: Compute Module 4s interface directly over dedicated PCIe Gen 2 lanes to NVMe SSDs and industrial eMMC, eliminating flash corruption during power cuts.
@@ -94,7 +94,7 @@ A common question regarding edge computing architectures is: *"Why deploy Raspbe
    - **Commercial Precedents**: Global industrial automation leaders deploy this exact CM4 silicon in factory PLCs and SCADA controllers, including **Siemens** (Simatic IOT2050), **OnLogic** (Factor 201/202), and **Kunbus** (Revolution Pi).
 4. **Resilience Through Multi-Node Clustering (Eliminating SPOF)**:
    - A single $15,000 rack server represents a single point of failure (one motherboard, one backplane, one OS kernel). If a component fails, the site goes blind.
-   - The Super6C provides true **N+2 Raft consensus** (`etcd`) and **3-way synchronous NVMe replication** (Longhorn). If a blade physically fails, the floating VIP shifts in **<3 seconds** and storage fails over automatically with zero data loss. In the event of hardware failure, individual CM4 modules cost just ~$55 for modular replacement during maintenance, rather than replacing an entire proprietary server.
+   - The Super6C provides true **N+2 Raft consensus** (`etcd`) and **3-way synchronous NVMe replication** (Longhorn). If a compute module physically fails, the floating VIP shifts in **<3 seconds** and storage fails over automatically with zero data loss. In the event of hardware failure, individual CM4 modules cost just ~$55 for modular replacement during maintenance, rather than replacing an entire proprietary server.
 
 ### End-to-End Field-to-Cloud Telemetry Pipeline
 
@@ -201,7 +201,7 @@ Real-world telemetry is captured by custom low-power SDI-12 / RS485 soil moistur
 │   ├── network-setup.mmd          # Source Mermaid definition for network architecture diagram
 │   ├── network-setup.png          # High-resolution PNG network architecture diagram
 │   ├── super6c-case.jpg           # DeskPi Super6C assembled Mini-ITX edge cluster enclosure
-│   ├── super6c-cm4.jpg            # 6x Raspberry Pi Compute Module 4 (CM4) blades installed
+│   ├── super6c-cm4.jpg            # 6x Raspberry Pi Compute Module 4 (CM4) compute modules installed
 │   └── super6c-m2.jpg             # Dedicated M.2 NVMe SSD storage tier on PCIe Gen 2
 ├── lorawan-iot-architecture.png   # High-resolution PNG LoRaWAN/IoT architecture diagram (root copy)
 ├── network-setup.png              # High-resolution PNG network architecture diagram (root copy)
@@ -212,10 +212,10 @@ Real-world telemetry is captured by custom low-power SDI-12 / RS485 soil moistur
 
 ## 3. Pre-Flight Configuration: What to Update Before Use
 
-Before executing playbooks against physical edge blades, customize the following configuration files for your network and hardware environment:
+Before executing playbooks against physical edge nodes, customize the following configuration files for your network and hardware environment:
 
 ### 1. Node Inventory (`inventory/hosts.yml`)
-Set the IP addresses and hostnames for your 6 blades:
+Set the IP addresses and hostnames for your 6 nodes:
 - **`k3s_servers`**: Minimum 3 nodes (`kube-1`, `kube-2`, `kube-3`) to establish an etcd high-availability quorum. Set `ansible_host` and `node_ip` to match your local subnet. Note that `k3s_init_node: true` must be designated on the first leader (`kube-1`).
 - **`k3s_agents`**: Dedicated worker nodes (`kube-4`, `kube-5`, `kube-6`) running edge workloads and Longhorn distributed NVMe storage replicas.
 

@@ -160,11 +160,11 @@ Each roadmap item is tracked with standardized metadata to facilitate prioritiza
   1. Deploy VictoriaMetrics (or Prometheus Agent) for minimal CPU/memory footprint on 4GB CM4 nodes.
   2. Deploy `node-exporter` with textfile collector reading `/sys/class/thermal/thermal_zone0/temp` and `vcgencmd get_throttled`.
   3. Provide pre-built Grafana dashboard showing:
-     * Individual CM4 blade temperatures (alerting at >75°C).
+     * Individual CM4 compute module temperatures (alerting at >75°C).
      * NVMe wear level and I/O utilization.
      * Ingress rate limiting rejection rates (429 HTTP status).
 * **Acceptance Standard**:
-  * Dashboard renders real-time thermals across all 6 blades with <3% CPU overhead per node.
+  * Dashboard renders real-time thermals across all 6 compute modules with <3% CPU overhead per node.
 
 ---
 
@@ -199,7 +199,7 @@ Each roadmap item is tracked with standardized metadata to facilitate prioritiza
 * **Target Milestone**: `Phase 2`
 * **Priority**: **P2 (Medium)**
 * **Reference**: [`docs/IOT_LORAWAN_STACK_ARCHITECTURE.md`](IOT_LORAWAN_STACK_ARCHITECTURE.md), [`docs/PHASE_2_CHIRPSTACK_THINGSBOARD_PERFORMANCE.md`](PHASE_2_CHIRPSTACK_THINGSBOARD_PERFORMANCE.md), [`docs/SDD.md`](SDD.md) §8.2.
-* **Objective**: Production telemetry ingestion supporting commercial agricultural scale (up to 4,000 active LoRaWAN sensor nodes across vineyard management blocks) hosted directly on the 6-blade Super6C cluster.
+* **Objective**: Production telemetry ingestion supporting commercial agricultural scale (up to 4,000 active LoRaWAN sensor nodes across vineyard management blocks) hosted directly on the 6-node Super6C cluster.
 * **Technical Scope**:
   1. Deploy ChirpStack v4 Network & Application Server with Traefik Basic Station WSS ingress.
   2. Deploy Eclipse Mosquitto or EMQX MQTT Broker cluster with Klipper LoadBalancer on VIP (`192.168.1.130:1883`).
