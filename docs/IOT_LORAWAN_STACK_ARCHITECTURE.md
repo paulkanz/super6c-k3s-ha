@@ -157,7 +157,8 @@ To allow external microcontrollers and local smart sensors to publish to your br
 ## 4. Storage & Retention Strategy (Hypertables)
 
 IoT time-series data grows rapidly. A cluster monitoring 100 sensors transmitting every 10 seconds generates:
-$$\frac{100 \text{ sensors} \times 86,400 \text{ seconds/day}}{10 \text{ sec interval}} = 864,000 \text{ data points / day} \approx 26 \text{ Million rows / month}$$
+
+> **Daily Volume Calculation**: `(100 sensors × 86,400 sec/day) ÷ 10 sec interval` = **864,000 data points / day** (~**26 Million rows / month**)
 
 ### TimescaleDB Optimization on High-Speed NVMe Storage
 1. **Hypertables**: Partition tables automatically by timestamp into 7-day chunks.
@@ -211,8 +212,8 @@ To evaluate the operational capacity of the cluster, we examine an enterprise-sc
 1. **Stateful Database Tier (Longhorn Replicated NVMe)**:
    * **Write Throughput**: TimescaleDB on direct PCIe Gen 2 NVMe ingests 15,000 to 25,000 writes/sec. An ingestion rate of 333.3 metrics/sec consumes **<2% of database write capacity**.
    * **Storage Footprint**: TimescaleDB columnar compression reduces rows to ~4 bytes/metric.
-     $$\text{Fleet Monthly Storage} = 864\text{M data points} \times 4 \text{ bytes} \approx \mathbf{3.45 \text{ GB / month}}$$
-     $$\text{Fleet Annual Storage} \approx \mathbf{41.5 \text{ GB / year}}$$
+     * **Monthly Storage**: `864M data points × 4 bytes` ≈ **~3.45 GB / month**
+     * **Annual Storage**: **~41.5 GB / year**
    * **Storage Verdict**: In a ~250 GB replicated Longhorn NVMe storage pool, 41.5 GB/year provides **over 6 years of unpurged sensor history** for the entire 4,000-sensor deployment before requiring any archival.
 2. **Tier 2 (Application Workers - CM4 4GB Nodes)**:
    * **Streamlined Single Ingestion Pipeline**: ChirpStack v4, EMQX, and shared Node-RED routing handle 13.3 msgs/sec with **<5% CPU and <300MB RAM combined**. This provides massive headroom for additional sensors or higher sampling frequencies.
@@ -268,7 +269,7 @@ Because IoT telemetry payloads are compact, supporting the 4,000-sensor commerci
 * **Frequency**: 4,000 messages every 300 seconds = **13.33 messages / second**
 * **Wire Payload** (TCP framing, TLS record encryption, and JSON wrapper): ~**1.0 KB / message**
 
-$$\text{Continuous Ingestion Bandwidth} = 13.33 \text{ msgs/sec} \times 1.0 \text{ KB} = \mathbf{13.33 \text{ KB/sec}} = \mathbf{106.7 \text{ Kbps}} \approx \mathbf{0.11 \text{ Mbps}}$$
+> **Continuous Ingestion Bandwidth**: `13.33 msgs/sec × 1.0 KB` = **13.33 KB/sec** (**106.7 Kbps** ≈ **~0.11 Mbps**)
 
 * Even during a **5x network jitter burst**, peak ingestion consumes only **~0.53 Mbps**.
 

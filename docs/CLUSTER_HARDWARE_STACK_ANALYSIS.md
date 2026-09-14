@@ -233,15 +233,22 @@ To provision equivalent high-availability multi-node compute and replicated NVMe
 * **Managed NAT Gateways & Cross-AZ Egress**: 2x NAT Gateways + cross-AZ replication bandwidth $\approx$ $70.00 – $140.00 / month
 * **EKS Cluster Management Fee**: $0.10/hour $\approx$ $73.00 / month (if using managed EKS)
 
-$$\text{Estimated AWS Monthly OpEx} \approx \mathbf{\$280.00 \text{ to } \$420.00 \text{ / month}}$$
+> **Estimated AWS Monthly OpEx**: **$280.00 to $420.00 / month** ($3,360 to $5,040 / year)
 
 #### 2. Payback Horizon & Break-Even Timeline
+
+| Investment Scope | Capital Expenditure (CapEx) | Monthly Cloud Benchmark | Payback Horizon |
+| :--- | :---: | :---: | :---: |
+| **Super6C Cluster Hardware** | **$795.00** | $350.00 / mo | **2.3 Months** (~70 Days) |
+| **Turnkey Solar + Battery System** | **$1,645.00** | $350.00 / mo | **4.7 Months** (~140 Days) |
+
 * **Super6C Cluster Hardware Alone ($795.00 CapEx)**:
-  $$\text{Payback Period} = \frac{\$795.00}{\$350.00/\text{mo (avg cloud)}} \approx \mathbf{2.3 \text{ months}}$$
-  *The entire 6-node cluster hardware pays for itself in less than 75 days.*
+  * **Payback Calculation**: `$795.00 CapEx` ÷ `$350.00/month (avg cloud OpEx)` = **~2.3 months** (~70 days)
+  * *The entire 6-node cluster hardware pays for itself in less than 75 days.*
+
 * **Turnkey System with 100% Solar & Battery Bank ($1,645.00 Total CapEx)**:
-  $$\text{Payback Period} = \frac{\$1,645.00}{\$350.00/\text{mo (avg cloud)}} \approx \mathbf{4.7 \text{ months}}$$
-  *The entire off-grid computing installation—including solar panels, charge controller, and 200Ah battery—reaches full economic payback in under 5 months.*
+  * **Payback Calculation**: `$1,645.00 Total CapEx` ÷ `$350.00/month (avg cloud OpEx)` = **~4.7 months** (~140 days)
+  * *The entire off-grid computing installation—including compute blades, NVMe storage, 300W solar panel, charge controller, and 200Ah LiFePO4 battery—reaches full economic payback in under 5 months.*
 
 #### 3. 3-Year Total Cost of Ownership (TCO) Comparison
 
