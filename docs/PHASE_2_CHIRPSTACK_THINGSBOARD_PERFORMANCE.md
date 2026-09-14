@@ -30,13 +30,13 @@ Running high-volume stateful database engines (PostgreSQL 16, TimescaleDB) and J
 
 ## 2. Physical Edge Hardware Constraints
 
-| Hardware Dimension | Specification per CM4 Blade | Cluster Total (6 Blades) | Operational Implication |
+| Hardware Dimension | Specification per Compute Module | Cluster Total (6 Blades) | Operational Implication |
 | :--- | :--- | :--- | :--- |
-| **System Memory** | **4 GB LPDDR4** (soldered, non-expandable) | **24 GB RAM** | System overhead (OS, `k3s`, `containerd`, Longhorn CSI) consumes ~1.1 GB. Net allocatable RAM on worker blades is **~2.5–2.8 GB per blade**. |
+| **System Memory** | **4 GB LPDDR4** (soldered, non-expandable) | **24 GB RAM** | System overhead (OS, `k3s`, `containerd`, Longhorn CSI) consumes ~1.1 GB. Net allocatable RAM on worker compute modules is **~2.5–2.8 GB per compute module**. |
 | **CPU Silicon** | **Broadcom BCM2711** (Quad-Core Cortex-A72 @ 1.5 GHz) | **24 Cores** | ARMv8 64-bit out-of-order execution; lower single-threaded IPC than desktop x86; sensitive to heavy JIT compilation. |
 | **Local Storage** | **250 GB M.2 NVMe SSD** (PCIe Gen 2 x1) | **1.5 TB NVMe** | Dedicated PCIe bus yields ~400–450 MB/s sequential and **50,000+ random IOPS**; zero SD card reliability risks. |
 | **Network Backplane**| **Onboard 1 Gbps Switch IC** | **1 Gbps East-West** | Interconnects all 6 blades at wire speed across PCB traces; physical ceiling for distributed storage replication. |
-| **Power & Thermal** | ~3.5W idle, ~7.5W peak per blade | **~20W idle, ~45W peak** | Dual active PWM fans keep blade temperatures <55°C to avoid CPU thermal throttling (starts at 80°C). |
+| **Power & Thermal** | ~3.5W idle, ~7.5W peak per compute module | **~20W idle, ~45W peak** | Dual active PWM fans keep module temperatures <55°C to avoid CPU thermal throttling (starts at 80°C). |
 
 ---
 

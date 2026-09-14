@@ -76,7 +76,7 @@ Deploying standard upstream Kubernetes (`kubeadm` / K8s) on the DeskPi Super6C b
 
 1. **Hardware & Power Constraints**: The cluster operates on 6x Raspberry Pi CM4 blades (4GB RAM, Quad-Core Cortex-A72 @ 1.5GHz) housed in a compact Mini-ITX chassis. The entire system operates under a strict **<85W power budget** to support 100% off-grid 24/7 operation powered solely by a solar PV array and LiFePO4 battery storage, with zero dependency on local utility electricity.
 2. **Upstream K8s is Heavy Overkill**: Upstream K8s control plane daemons (`kube-apiserver`, `controller-manager`, `scheduler`, standalone `etcd`, `kube-proxy`) consume **1.5 GiB – 2.0 GiB+ of idle RAM per node** (over 40%–50% of available memory on a 4GB CM4). Running standard K8s comfortably requires bulky, power-hungry x86 servers drawing 300W–500W+—completely defeating the low-SWaP (Size, Weight, and Power) edge appliance objective.
-3. **K3s is Lightweight & Fully Certified**: K3s delivers 100% CNCF-certified Kubernetes APIs in a single binary consuming only **~512 MiB of RAM**. This preserves **~3.5GB (85%+) of memory on each blade** for distributed block storage (Longhorn), edge ingress (Traefik), and upcoming telemetry workloads (ChirpStack & ThingsBoard).
+3. **K3s is Lightweight & Fully Certified**: K3s delivers 100% CNCF-certified Kubernetes APIs in a single binary consuming only **~512 MiB of RAM**. This preserves **~3.5GB (85%+) of memory on each compute module** for distributed block storage (Longhorn), edge ingress (Traefik), and upcoming telemetry workloads (ChirpStack & ThingsBoard).
 
 ### Architectural Rationale: Industrial Edge Silicon vs. Enterprise Rack Overkill
 
@@ -229,7 +229,7 @@ Review and customize cluster networking parameters:
 
 ### 3. Hardware & OS Prerequisites
 - **Operating System**: Debian 12 (Bookworm), Raspberry Pi OS Lite (64-bit), or Armbian.
-- **Kernel cgroups**: Kubernetes requires memory cgroups. Add `cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory` to `/boot/firmware/cmdline.txt` (or `/boot/cmdline.txt`) on each blade and reboot.
+- **Kernel cgroups**: Kubernetes requires memory cgroups. Add `cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory` to `/boot/firmware/cmdline.txt` (or `/boot/cmdline.txt`) on each compute module and reboot.
 - **SSH Key Authentication**: Install your workstation SSH public key on all nodes and verify passwordless sudo:
   ```bash
   ssh-copy-id admin@192.168.1.138

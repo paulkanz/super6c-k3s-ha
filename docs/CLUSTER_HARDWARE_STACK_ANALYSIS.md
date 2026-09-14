@@ -23,7 +23,7 @@ The cluster architecture is grounded in a compact, enterprise-grade edge platfor
 │   │ └─────┴─────┴─────┘   │ └─────┴─────┴─────┘   │                                    │
 │   └───────────────────────┴───────────────────────┘                                    │
 │   • 6x Raspberry Pi Compute Module 4 (4GB RAM / eMMC)                                  │
-│   • 6x M.2 NVMe SSDs (250GB PCIe Gen 2 dedicated per blade)                            │
+│   • 6x M.2 NVMe SSDs (250GB PCIe Gen 2 dedicated per compute module)                   │
 │   • Integrated Gigabit Switch Backplane (Direct East-West interconnect)                │
 │   • Dual RJ45 Uplinks (LAN / WAN bonding or segmentation)                              │
 │   • Single ATX 24-Pin or 12V-19V DC Power Feed                                         │
@@ -66,8 +66,8 @@ A common initial reaction to edge computing clusters utilizing the Raspberry Pi 
 | :--- | :--- | :--- |
 | **Physical Nodes** | **6x Raspberry Pi Compute Module 4** (Blades K1–K6) | 3 Dedicated Control Plane nodes + 3 Worker/Storage nodes. |
 | **CPU Cores / Threads** | **24 Cores** (Quad-Core 64-bit ARM Cortex-A72 @ 1.5 GHz) | Hardware virtualization, parallel container builds, real-time analytics. |
-| **Total Memory** | **24 GB LPDDR4** (4 GB per CM4 blade) | High-efficiency memory footprint; isolated per-blade memory spaces. |
-| **Raw NVMe Storage** | **1.5 TB NVMe** (6x 250GB M.2 PCIe Gen 2 SSDs) | Dedicated direct PCIe bus per blade; eliminates USB/SD card bottlenecks. |
+| **Total Memory** | **24 GB LPDDR4** (4 GB per compute module) | High-efficiency memory footprint; isolated per-module memory spaces. |
+| **Raw NVMe Storage** | **1.5 TB NVMe** (6x 250GB M.2 PCIe Gen 2 SSDs) | Dedicated direct PCIe bus per compute module; eliminates USB/SD card bottlenecks. |
 | **Longhorn Storage Pool** | **~750 GB Raw / ~250 GB Synchronously Replicated** | 3-way replicated block storage across worker blades (K4, K5, K6). |
 | **Active Pod Capacity** | **60 to 80+ Active Pods** | Full edge multi-service orchestration (IoT, Ingress, Security, Storage). |
 | **Combined Power Draw** | **~20W Idle / ~35W–45W Full Peak Load** | Extreme thermal efficiency; operates 24/7 on low-cost battery/solar backup. |
@@ -137,9 +137,9 @@ Workloads are cleanly separated across dedicated tiers to maximize reliability w
   * **Host & Cluster Hardening**: Native Linux kernel protections via `auditd` 99-rule compliance, `fail2ban` intrusion defenses, UFW network filtering, and K3s CIS benchmark controls.
 
 ### Worker Node Memory Allocation & Headroom Envelope
-* **Total Physical RAM (Workers K4–K6)**: **12.0 GB LPDDR4** (4 GB per blade).
+* **Total Physical RAM (Workers K4–K6)**: **12.0 GB LPDDR4** (4 GB per compute module).
 * **Base System & Storage CSI Overhead**: ~3.5–4.5 GB total across the 3 worker nodes (OS kernel, K3s agent, containerd, and Longhorn engine/instance managers).
-* **Net Allocatable Application RAM**: **~7.5–8.0 GB aggregate** (~2.5–2.8 GB per blade).
+* **Net Allocatable Application RAM**: **~7.5–8.0 GB aggregate** (~2.5–2.8 GB per compute module).
 * **Workload Memory Target**: Active pods are budgeted to consume **~5.0–6.0 GB aggregate (~65% capacity)**, preserving **~2.0–3.0 GB of unreserved RAM** for the Linux kernel PageCache to accelerate disk I/O and prevent OOM killer events.
 
 ---
