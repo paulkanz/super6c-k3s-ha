@@ -72,30 +72,40 @@ A common initial reaction to edge computing clusters utilizing the Raspberry Pi 
 | **Active Pod Capacity** | **60 to 80+ Active Pods** | Full edge multi-service orchestration (IoT, Ingress, Security, Storage). |
 | **Combined Power Draw** | **~20W Idle / ~35W–45W Full Peak Load** | Extreme thermal efficiency; operates 24/7 on low-cost battery/solar backup. |
 
-### 3.1. Bill of Materials (BOM) & Hardware Procurement Costs
+### 3.1. Compute Subsystem Bill of Materials (BOM) & Hardware Costs
 
-The physical cluster is constructed entirely from off-the-shelf commercial components, avoiding proprietary vendor lock-in. The table below outlines the capital expenditure (CapEx) required to build the fully configured 6-node DeskPi Super6C cluster:
+The physical compute cluster is built from off-the-shelf commercial components, completely avoiding proprietary hardware lock-in. The table below outlines the capital expenditure (CapEx) for the 6-node DeskPi Super6C compute cluster:
 
 | Component | Detailed Hardware Specification | Qty | Est. Unit Cost | Extended Total |
 | :--- | :--- | :---: | :---: | :---: |
 | **DeskPi Super6C Board & Case** | Mini-ITX motherboard with integrated 6-port GbE switch, dual 40mm PWM fans, 6x aluminum heatsinks, case enclosure, and power button | 1 | $230.00 | $230.00 |
 | **Raspberry Pi CM4** | Compute Module 4, Quad-Core Cortex-A72 @ 1.5 GHz, **4GB LPDDR4 RAM**, onboard eMMC / Lite | 6 | $55.00 | $330.00 |
-| **M.2 NVMe SSDs** | 250GB M.2 2280 PCIe Gen 3/4 NVMe Solid State Drives (e.g., Kingston NV2, Crucial P3, WD Blue) | 6 | $30.00 | $180.00 |
+| **M.2 NVMe SSDs** | 250GB M.2 2280 PCIe Gen 3/4 NVMe Solid State Drives (Kingston NV2 / Crucial P3 / WD Blue) | 6 | $30.00 | $180.00 |
 | **DC Power Supply** | 12V 10A (120W) regulated DC power adapter (5.5mm × 2.5mm barrel jack) or compact 12V DC-ATX converter | 1 | $35.00 | $35.00 |
 | **Accessories & Cabling** | Cat6 patch cables, micro-USB eMMC provisioning cable, internal mounting hardware | 1 set | $20.00 | $20.00 |
-| **Total Super6C Cluster Hardware (CapEx)** | **6-Node HA Kubernetes Appliance (24 Cores, 24GB RAM, 1.5TB NVMe)** | — | — | **$795.00** |
+| **Compute Subsystem CapEx Total** | **6-Node HA Kubernetes Appliance (24 Cores, 24GB RAM, 1.5TB NVMe)** | — | — | **$795.00** |
 
-#### Optional 100% Off-Grid Solar & Battery Infrastructure (CapEx)
-For remote agricultural or off-grid industrial deployments with zero local utility electricity:
+### 3.2. Solar Generation & Energy Storage Subsystem Bill of Materials (BOM)
 
-| Component | Detailed Specification | Qty | Est. Unit Cost | Extended Total |
+Because this system is engineered for 100% off-grid operation with zero local utility electricity, the solar generation and battery energy storage subsystem is a fundamental architectural component:
+
+| Component | Detailed Hardware Specification | Qty | Est. Unit Cost | Extended Total |
 | :--- | :--- | :---: | :---: | :---: |
-| **Solar PV Array** | 300W Monocrystalline Solar Panel (or 2x 150W panels) | 1 | $200.00 | $200.00 |
-| **LiFePO4 Battery Bank** | 12V 200Ah (2,560 Wh) Grade-A LiFePO4 Battery with integrated smart BMS | 1 | $480.00 | $480.00 |
-| **Solar Charge Controller** | 100V / 30A MPPT Solar Charge Controller (>98% efficiency) | 1 | $110.00 | $110.00 |
-| **BOS & Wiring** | 10 AWG solar cables, MC4 connectors, inline DC breaker/fuse, mounting Z-brackets | 1 set | $60.00 | $60.00 |
-| **Total Off-Grid Power Plant (CapEx)** | **Complete 24/7/365 Autonomous Solar Generation & Energy Storage** | — | — | **$850.00** |
-| **Total Turnkey Off-Grid System** | **Compute Cluster + 100% Off-Grid Solar/Battery Physical Plant** | — | — | **$1,645.00** |
+| **Solar PV Array** | 300W Monocrystalline Solar Array (rigid aluminum frame, high-efficiency mono PERC cells; or 2x 150W panels) | 1 | $210.00 | $210.00 |
+| **LiFePO4 Battery Bank** | 12V 200Ah (2,560 Wh nominal) Deep-Cycle LiFePO4 Battery with built-in smart BMS, low-temperature charging cutoff, and 4,000+ cycle life | 1 | $485.00 | $485.00 |
+| **Solar Charge Controller** | 100V / 30A MPPT Solar Charge Controller (>98% efficiency, multi-stage charging, RS485/Bluetooth telemetry interface) | 1 | $125.00 | $125.00 |
+| **DC Voltage Regulation & Power Bus** | Regulated 12V/19V DC-DC power stabilizer, inline 40A DC circuit breaker, 6-way fused distribution block, and battery disconnect switch | 1 set | $65.00 | $65.00 |
+| **Weatherproof Outdoor Enclosure** | Lockable, ventilated NEMA 3R/4X rated outdoor enclosure or heavy-duty marine battery box for housing battery, MPPT, and DC bus | 1 | $90.00 | $90.00 |
+| **Balance of System (BOS) & Cabling** | 10 AWG UV-resistant PV extension cables (30 ft), 4 AWG pure copper battery leads with terminal lugs, MC4 connectors, solar mounting Z-brackets | 1 set | $75.00 | $75.00 |
+| **Solar & Storage Subsystem CapEx Total** | **Complete 24/7/365 Autonomous Solar Generation & Energy Storage Plant** | — | — | **$1,050.00** |
+
+### 3.3. Full Turnkey Physical Plant Capital Investment
+
+| System Tier | Functional Scope | Extended CapEx | % of Total |
+| :--- | :--- | :---: | :---: |
+| **Compute Subsystem** | 6-Node DeskPi Super6C Appliance, 24 Cores, 24GB RAM, 1.5TB NVMe, L2 Switch Backplane | $795.00 | 43.1% |
+| **Solar & Energy Storage Subsystem** | 300W Solar PV, 12V 200Ah LiFePO4 (2.56 kWh), 30A MPPT, DC Bus, NEMA Enclosure, BOS | $1,050.00 | 56.9% |
+| **Total Turnkey Capital Investment** | **Complete 100% Off-Grid Autonomous Edge Computing Infrastructure** | **$1,845.00** | **100.0%** |
 
 ---
 
@@ -189,11 +199,13 @@ The entire edge cluster and communications chain are engineered to operate **100
 
 To guarantee uninterrupted 24/7/365 continuous operation in remote agricultural and industrial installations:
 
-| System Component | Specification | Daily Energy / Capacity | Operational Envelope & Autonomy |
-| :--- | :--- | :--- | :--- |
-| **Solar PV Array** | **300W Monocrystalline PV** (or 2x 150W / 1x 350W) | **~1,200 – 1,500+ Wh / day** *(at 4–5 Peak Sun Hours)* | Fully replenishes daily cluster consumption and charges battery bank under normal sun exposure. |
-| **LiFePO4 Battery Bank** | **12V 200Ah LiFePO4** (Grade-A prismatic cells) | **2,560 Watt-Hours (Wh)** *(2,048 Wh usable @ 80% DoD)* | **~36 to 48+ Hours Continuous Autonomy** with zero solar input (multi-day storm / cloudy weather reserve). |
-| **Solar Charge Controller** | **MPPT Controller** (e.g. 100V/30A MPPT) | **>98% Tracking Efficiency** | Maximizes winter and low-angle solar harvest; provides temperature-compensated charging. |
+| System Component | Specification | Daily Energy / Capacity | Operational Envelope & Autonomy | Est. CapEx |
+| :--- | :--- | :--- | :--- | :---: |
+| **Solar PV Array** | **300W Monocrystalline PV** (or 2x 150W / 1x 350W) | **~1,200 – 1,500+ Wh / day** *(at 4–5 Peak Sun Hours)* | Fully replenishes daily cluster consumption and charges battery bank under normal sun exposure. | $210.00 |
+| **LiFePO4 Battery Bank** | **12V 200Ah LiFePO4** (Grade-A prismatic cells) | **2,560 Watt-Hours (Wh)** *(2,048 Wh usable @ 80% DoD)* | **~36 to 48+ Hours Continuous Autonomy** with zero solar input (multi-day storm / cloudy weather reserve). | $485.00 |
+| **Solar Charge Controller** | **MPPT Controller** (e.g. 100V/30A MPPT) | **>98% Tracking Efficiency** | Maximizes winter and low-angle solar harvest; provides temperature-compensated charging. | $125.00 |
+| **BOS, Enclosure & DC Bus** | NEMA outdoor enclosure, DC breakers, 10 AWG PV wire, 4 AWG battery leads | N/A | Safe, weather-resistant, continuous direct DC distribution with overcurrent protection. | $230.00 |
+| **Solar Subsystem Total** | **Autonomous Solar Generation & Battery Storage** | **2,560 Wh Battery / 300W PV** | **100% Off-Grid Power Independence (Zero Utility Reliance)** | **$1,050.00** |
 
 ### Native DC Power Delivery (Eliminating Inverter Losses)
 > [!TIP]
@@ -239,16 +251,21 @@ To provision equivalent high-availability multi-node compute and replicated NVMe
 
 | Investment Scope | Capital Expenditure (CapEx) | Monthly Cloud Benchmark | Payback Horizon |
 | :--- | :---: | :---: | :---: |
-| **Super6C Cluster Hardware** | **$795.00** | $350.00 / mo | **2.3 Months** (~70 Days) |
-| **Turnkey Solar + Battery System** | **$1,645.00** | $350.00 / mo | **4.7 Months** (~140 Days) |
+| **Compute Subsystem Alone** | **$795.00** | $350.00 / mo | **2.3 Months** (~70 Days) |
+| **Solar & Energy Storage Subsystem** | **$1,050.00** | $350.00 / mo | **3.0 Months** (~90 Days) |
+| **Complete Turnkey Solar Edge Cluster** | **$1,845.00** | $350.00 / mo | **5.3 Months** (~160 Days) |
 
-* **Super6C Cluster Hardware Alone ($795.00 CapEx)**:
+* **Compute Subsystem Alone ($795.00 CapEx)**:
   * **Payback Calculation**: `$795.00 CapEx` ÷ `$350.00/month (avg cloud OpEx)` = **~2.3 months** (~70 days)
   * *The entire 6-node cluster hardware pays for itself in less than 75 days.*
 
-* **Turnkey System with 100% Solar & Battery Bank ($1,645.00 Total CapEx)**:
-  * **Payback Calculation**: `$1,645.00 Total CapEx` ÷ `$350.00/month (avg cloud OpEx)` = **~4.7 months** (~140 days)
-  * *The entire off-grid computing installation—including compute blades, NVMe storage, 300W solar panel, charge controller, and 200Ah LiFePO4 battery—reaches full economic payback in under 5 months.*
+* **Solar & Energy Storage Subsystem ($1,050.00 CapEx)**:
+  * **Payback Calculation**: `$1,050.00 CapEx` ÷ `$350.00/month (avg cloud OpEx)` = **~3.0 months** (~90 days)
+  * *The dedicated off-grid power generation and energy storage plant pays for itself in 3 months against ongoing cloud operational costs.*
+
+* **Complete Turnkey Solar Edge Cluster ($1,845.00 Total CapEx)**:
+  * **Payback Calculation**: `$1,845.00 Total CapEx` ÷ `$350.00/month (avg cloud OpEx)` = **~5.3 months** (~160 days)
+  * *The entire off-grid computing installation—including compute blades, NVMe storage, 300W solar panel array, MPPT charge controller, NEMA enclosure, and 200Ah LiFePO4 battery—reaches full economic payback in under 5.5 months.*
 
 #### 3. 3-Year Total Cost of Ownership (TCO) Comparison
 
@@ -257,6 +274,6 @@ To provision equivalent high-availability multi-node compute and replicated NVMe
 | **AWS Cloud Architecture (Multi-AZ HA)** | $0.00 | $350.00 / mo | **$12,600.00** | Baseline |
 | **Enterprise 1U Rack Server (Dell PowerEdge R650)** | $9,500.00 | ~$65.00 / mo (utility power @ 450W) | **$11,840.00** | +$760.00 (6%) |
 | **Super6C Cluster (Grid-Tied)** | $795.00 | ~$3.50 / mo (utility power @ 35W) | **$921.00** | **$11,679.00 (93%)** |
-| **Super6C Cluster (100% Off-Grid Solar + Battery)** | **$1,645.00** | **$0.00 / mo (100% solar)** | **$1,645.00** | **$10,955.00 (87%)** |
+| **Super6C Cluster (100% Off-Grid Solar + Battery)** | **$1,845.00** | **$0.00 / mo (100% solar)** | **$1,845.00** | **$10,755.00 (85%)** |
 
-**Conclusion**: The DeskPi Super6C architecture delivers enterprise-grade 3-node Raft consensus and synchronous distributed storage at a fraction of the cost of traditional enterprise alternatives. By combining a low **$795.00 cluster hardware CapEx** with a **$0.00/month operational energy cost**, the platform achieves complete financial payback in months while providing absolute operational autonomy from both cloud service outages and rural electrical grid failures.
+**Conclusion**: The DeskPi Super6C architecture delivers enterprise-grade 3-node Raft consensus and synchronous distributed storage at a fraction of the cost of traditional enterprise alternatives. By combining a low **$795.00 compute CapEx** and a **$1,050.00 solar generation/storage CapEx** ($1,845.00 total) with a permanent **$0.00/month operational energy cost**, the platform achieves complete financial payback in under 5.5 months while providing absolute operational autonomy from both cloud service outages and rural electrical grid failures.
