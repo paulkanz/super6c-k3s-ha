@@ -493,17 +493,25 @@ ansible-playbook playbooks/reset.yml
 
 ## 8. License & Permitted Use
 
-This project is open-source and licensed under the **[PolyForm Noncommercial License 1.0.0](LICENSE)**.
+This project is source-available and licensed under the **[PolyForm Noncommercial License 1.0.0](LICENSE)**.
+
+### Scope of Coverage
+The license applies to all files, directories, and assets within this repository, including:
+* **Software & Code**: Applications, automation scripts, and maintenance playbooks.
+* **Infrastructure as Code (IaC)**: Ansible playbooks, roles, inventory, and K3s provisioning configurations.
+* **Kubernetes Manifests**: Deployments, DaemonSets, CRDs, Longhorn storage configurations, and Traefik ingress definitions.
+* **Documentation & Technical Specifications**: System Design Descriptions (SDD), RF airtime & gateway capacity analyses, LoRaWAN stack guides, thermal/solar engineering models, and architectural blueprints.
 
 ### Permitted Uses (Noncommercial):
 * Personal study, education, academic coursework, and experimentation.
-* Non-commercial edge computing and IoT research.
-* Evaluation, security research, and vulnerability testing.
+* Non-commercial edge computing, homelab, and IoT research.
+* Security research, audits, and architectural evaluation.
 
-### Prohibited Uses:
+### Prohibited Uses (Commercial):
 * Commercial advantage, monetary compensation, or revenue generation.
 * Internal operational or infrastructure use within a for-profit commercial entity or enterprise.
-* Paid managed services, commercial hosting, or paid consulting based on this software.
+* Paid managed infrastructure, commercial hosting, or paid consulting based on this software or its architectural blueprints.
+* Commercial distribution, publishing, or sublicensing of the specifications or documentation.
 
 For commercial licensing inquiries, enterprise production deployments, or custom arrangements, please contact **kanzpaul@gmail.com**.
 

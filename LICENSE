@@ -4,6 +4,15 @@
 
 Copyright (c) 2026 Paul Kanz <kanzpaul@gmail.com>
 
+### Scope of Coverage & Definition of Software
+This license applies to all files, directories, and materials contained within this repository, including but not limited to:
+* All software, source code, microservices, and scripts.
+* All Infrastructure as Code (IaC), Ansible playbooks, roles, and inventory.
+* All Kubernetes manifests, Helm values, Longhorn configurations, and network policies.
+* All documentation, architectural blueprints, System Design Descriptions (SDD), engineering specifications, RF airtime models, and storage capacity analyses.
+
+Throughout this license, the terms "software", "work", and "any part of it" expressly encompass all such code, manifests, architecture diagrams, data models, specifications, and documentation.
+
 ## 1. Purpose
 
 This license allows you to use the software only for noncommercial purposes.
