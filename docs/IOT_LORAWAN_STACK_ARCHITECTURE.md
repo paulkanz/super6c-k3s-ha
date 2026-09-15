@@ -194,35 +194,44 @@ Step 5: Visualization & Alerting (CM4 Workers)
 ## 6. Blueprint A Scalability & Sizing Analysis (Commercial Fleet Case Study)
 
 To evaluate the operational capacity of the cluster, we examine an enterprise-scale commercial agricultural workload (e.g., across 200 monitoring zones / vineyard blocks):
-* **Per Monitoring Zone / Block**: 20 sensors transmitting every 5 minutes (300s), each reporting 20 to 30 metrics (average **25 metrics/payload**).
-* **Total Commercial Fleet**: **4,000 active sensors** generating **100,000 metric points** every 5-minute cycle across the property.
+* **Payload Size Baseline**: **115-byte** binary packet per transmission (encapsulating ~25 multi-depth SDI-12 soil moisture/temperature, microclimate, battery/solar metrics, and health flags).
+* **Ingestion Cadence**: Transmitting every **5 minutes (300s)** as the primary high-resolution monitoring cadence, with an **optional 15-minute (900s)** power-optimized / conservative telemetry profile.
+* **Commercial Fleet Baseline**: **4,000 active sensors** generating rich telemetry across 200 vineyard blocks (20 sensors per block).
 
-### 6.1. Workload Calculations
+### 6.1. Workload Calculations: 5-Minute vs. Optional 15-Minute Cadence
 
-| Metric Dimension | Single Zone (20 Sensors) | Full Commercial Fleet (200 Zones / 4,000 Sensors) |
-| :--- | :--- | :--- |
-| **Active Sensor Count** | 20 sensors | **4,000 sensors** |
-| **Uplink Message Rate** | 20 msgs / 300s (**0.067 msgs/sec**) | **13.33 msgs/sec** |
-| **Metric Ingestion Rate** | 500 metrics / 300s (**1.67 metrics/sec**) | **333.33 metrics/sec** |
-| **Daily Telemetry Volume** | 144,000 data points / day | **28,800,000 data points / day** |
-| **Monthly Telemetry Volume**| 4,320,000 data points / month | **864,000,000 data points / month** |
+| Metric Dimension | Single Zone (20 Sensors) @ 5m | Single Zone (20 Sensors) @ 15m | Full Fleet (4,000 Sensors) @ 5m | Full Fleet (4,000 Sensors) @ 15m |
+| :--- | :---: | :---: | :---: | :---: |
+| **Active Sensor Count** | 20 sensors | 20 sensors | **4,000 sensors** | **4,000 sensors** |
+| **Transmit Cadence** | Every 5 min (300s) | Every 15 min (900s) | Every 5 min (300s) | Every 15 min (900s) |
+| **Packets / Day / Sensor** | 288 packets | 96 packets | 288 packets | 96 packets |
+| **Uplink Ingestion Rate** | 0.067 msgs/sec | 0.022 msgs/sec | **13.33 msgs/sec** | **4.44 msgs/sec** |
+| **Metric Ingestion Rate (~25 metrics/pkt)** | 1.67 metrics/sec | 0.56 metrics/sec | **333.33 metrics/sec** | **111.11 metrics/sec** |
+| **Daily Telemetry Volume** | 144,000 data points | 48,000 data points | **28,800,000 data points** | **9,600,000 data points** |
+| **Monthly Telemetry Volume** | 4,320,000 data points | 1,440,000 data points | **864,000,000 data points** | **288,000,000 data points** |
+| **Annual Raw Payload Volume (115B)** | ~241.8 MB | ~80.6 MB | **~48.36 GB / year** | **~16.12 GB / year** |
 
 ### 6.2. Resource Bottleneck Analysis Across Tiers
 
 1. **Stateful Database Tier (Longhorn Replicated NVMe)**:
-   * **Write Throughput**: TimescaleDB on direct PCIe Gen 2 NVMe ingests 15,000 to 25,000 writes/sec. An ingestion rate of 333.3 metrics/sec consumes **<2% of database write capacity**.
-   * **Storage Footprint**: TimescaleDB columnar compression reduces rows to ~4 bytes/metric.
-     * **Monthly Storage**: `864M data points × 4 bytes` ≈ **~3.45 GB / month**
-     * **Annual Storage**: **~41.5 GB / year**
-   * **Storage Verdict**: In a ~250 GB replicated Longhorn NVMe storage pool, 41.5 GB/year provides **over 6 years of unpurged sensor history** for the entire 4,000-sensor deployment before requiring any archival.
+   * **Write Throughput**: TimescaleDB on direct PCIe Gen 2 NVMe ingests 15,000 to 25,000 writes/sec. Even at the 5-minute peak rate of 333.3 metrics/sec, this consumes **<2% of database write capacity** (dropping to **<0.7%** at 15-minute intervals).
+   * **Storage Footprint**: TimescaleDB columnar compression reduces rows to ~4 bytes/metric (~19 bytes per 115-byte packet):
+     * **5-Minute Cadence**:
+       * Monthly Storage: `864M data points × 4 bytes` ≈ **~3.45 GB / month** (~666 MB/month compressed chunk storage).
+       * Annual Storage: **~41.5 GB / year** (~8.0 GB/year compressed hypertable storage).
+       * **Storage Verdict**: In a 200–250 GB NVMe partition, provides **~25 to 30 years of continuous unpurged historical data**.
+     * **Optional 15-Minute Cadence**:
+       * Monthly Storage: `288M data points × 4 bytes` ≈ **~1.15 GB / month** (~222 MB/month compressed chunk storage).
+       * Annual Storage: **~13.8 GB / year** (~2.66 GB/year compressed hypertable storage).
+       * **Storage Verdict**: Provides **~75 to 90 years of continuous historical retention** on the same volume.
 2. **Tier 2 (Application Workers - CM4 4GB Nodes)**:
-   * **Streamlined Single Ingestion Pipeline**: ChirpStack v4, EMQX, and shared Node-RED routing handle 13.3 msgs/sec with **<5% CPU and <300MB RAM combined**. This provides massive headroom for additional sensors or higher sampling frequencies.
+   * **Streamlined Single Ingestion Pipeline**: ChirpStack v4, EMQX, and shared Node-RED routing handle 13.3 msgs/sec (5-min) or 4.4 msgs/sec (15-min) with **<5% CPU and <300MB RAM combined**. This provides massive headroom for additional sensors or higher sampling frequencies.
    * **Resource Allocation**: Application pods require under 1.5 GB RAM total, leaving ample capacity on the 3 worker nodes (~7.5 GB allocatable RAM) for auxiliary services, ThingsBoard, and alerting engines.
 3. **Physical LoRaWAN RF Airtime (Gateway Limit)**:
-   * At Spreading Factor 7 (SF7), 4,000 sensors transmit ~40-byte packets (~70ms airtime).
-   * To prevent packet collisions exceeding 10%, a single 8-channel gateway reliably supports ~2,000 sensors.
-   * **Requirement**: 4,000 LoRaWAN sensors require at least **2 physical 8-channel gateways** for geographic coverage and channel diversity. (Wi-Fi/Ethernet MQTT sensors have no RF duty cycle limit).
-   * *For detailed mathematical modeling of ALOHA packet collisions, FCC 400ms dwell time compliance, and 110-byte payload retention on NVMe across 500 vs. 2,000 sensors, refer to [`docs/LORAWAN_CAPACITY_AND_STORAGE_ANALYSIS.md`](LORAWAN_CAPACITY_AND_STORAGE_ANALYSIS.md).*
+   * For 115-byte physical payloads at SF7 (~190ms ToA) or SF8 (~340ms ToA):
+     * **5-Minute Cadence**: A single 8-channel gateway reliably supports up to ~2,000 sensors (<8% packet collisions). A 4,000-sensor fleet requires **2 physical 8-channel gateways** to distribute RF channel load and ensure geographic coverage across vineyard blocks.
+     * **Optional 15-Minute Cadence**: Because airtime demand drops by $3\times$, a single 8-channel gateway can support **up to 4,000–5,000 sensors** with packet collision rates staying under 5%!
+   * *For detailed mathematical modeling of ALOHA packet collisions, FCC 400ms dwell time compliance, and 115-byte payload retention on NVMe across 500, 2,000, and 4,000 sensors (at both 5-min and optional 15-min intervals), refer to [`docs/LORAWAN_CAPACITY_AND_STORAGE_ANALYSIS.md`](LORAWAN_CAPACITY_AND_STORAGE_ANALYSIS.md).*
 
 ---
 
