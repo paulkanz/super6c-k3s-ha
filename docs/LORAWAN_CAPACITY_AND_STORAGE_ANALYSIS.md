@@ -35,11 +35,11 @@ When evaluating how many sensors transmitting **115-byte packets at 5-minute int
 ## 2. Layer 1: RF Airtime & 8-Channel Gateway Sizing (The Physical Bottleneck)
 
 ### 2.1. Transmission Cadence & Duty Cycle
-* **Primary Cadence**: Every 5 minutes ($T = 300\text{ seconds}$).
+* **Primary Cadence**: Every 5 minutes (300 seconds).
   * Uplink Frequency: 12 packets/hour = **288 packets/day** = **105,120 packets/year per sensor**.
-* **Optional Low-Power Cadence**: Every 15 minutes ($T = 900\text{ seconds}$).
+* **Optional Low-Power Cadence**: Every 15 minutes (900 seconds).
   * Uplink Frequency: 4 packets/hour = **96 packets/day** = **35,040 packets/year per sensor**.
-  * **Architectural Best Practice**: A 15-minute interval is recommended as industry best practice whenever the underlying data change rate is not actionable below 5 minutes (e.g., deep soil moisture percolation, diurnal temperature curves). Operating at 15 minutes cuts RF airtime contention by 66%, extends field node battery lifespan $3\times$, and triples single-gateway fleet capacity.
+  * **Architectural Best Practice**: A 15-minute interval is recommended as industry best practice whenever the underlying data change rate is not actionable below 5 minutes (e.g., deep soil moisture percolation, diurnal temperature curves). Operating at 15 minutes cuts RF airtime contention by 66%, extends field node battery lifespan 3×, and triples single-gateway fleet capacity.
 * **Payload Size**: **115 bytes** (representing rich multi-sensor payloads, e.g., 3-depth soil moisture/temperature, canopy climate, battery voltage, solar metrics, and diagnostic flags).
 
 ### 2.2. Time on Air (ToA) & Regulatory Dwell Time Limits
@@ -54,22 +54,22 @@ For a 115-byte physical payload (with standard 13-byte LoRaWAN MAC header, pream
 
 > [!WARNING]
 > In North America (US915 band), **FCC regulations mandate a maximum dwell time of 400 ms per transmission**.  
-> Because a 115-byte payload requires **~190 ms at SF7** and **~340 ms at SF8**, nodes must operate at **SF7 or SF8**. Spreading factors $\ge$ SF9 exceed the 400ms limit for 115-byte payloads and will also drastically increase channel collision probability.
+> Because a 115-byte payload requires **~190 ms at SF7** and **~340 ms at SF8**, nodes must operate at **SF7 or SF8**. Spreading factors ≥ SF9 exceed the 400ms limit for 115-byte payloads and will also drastically increase channel collision probability.
 
 ### 2.3. Pure ALOHA Mathematical Collision Model
-Because LoRaWAN devices transmit asynchronously without channel sensing (Pure ALOHA), packets on the same frequency channel and spreading factor will collide if their airtimes overlap within $2 \times \text{ToA}$:
+Because LoRaWAN devices transmit asynchronously without channel sensing (Pure ALOHA), packets on the same frequency channel and spreading factor will collide if their airtimes overlap within 2 × ToA:
 
-$$P_{\text{collision}} \approx 1 - e^{-2G}$$
+$$\text{P}_{\text{collision}} \approx 1 - e^{-2G}$$
 
-*(where $G$ is the normalized channel traffic load across the 8 gateway frequency channels)*
+*(where **G** is the normalized channel traffic load across the 8 gateway frequency channels)*
 
 With a fleet average Time on Air of ~200 ms (SF7/SF8 mix):
 * **500 Sensors**:
-  * **5-Minute Interval**: Aggregate Uplink Rate: 500 ÷ 300s = **1.67 packets/sec**. Channel Rate: 1.67 ÷ 8 = 0.208 pkts/sec/channel. Channel Occupancy ($G$): $0.208 \times 0.200\text{s} = 0.0416$. Effective collision rate with SX1302/SX1303 multi-SF orthogonality is **<2%**.
-  * **15-Minute Interval**: Aggregate Uplink Rate: 500 ÷ 900s = **0.56 packets/sec**. Channel Rate: 0.56 ÷ 8 = 0.070 pkts/sec/channel. Channel Occupancy ($G$): $0.070 \times 0.200\text{s} = 0.0140$. Effective collision rate is **<0.7%**.
+  * **5-Minute Interval**: Aggregate Uplink Rate: 500 ÷ 300s = **1.67 packets/sec**. Channel Rate: 1.67 ÷ 8 = 0.208 pkts/sec/channel. Channel Occupancy (**G**): 0.208 × 0.200s = **0.0416**. Effective collision rate with SX1302/SX1303 multi-SF orthogonality is **<2%**.
+  * **15-Minute Interval**: Aggregate Uplink Rate: 500 ÷ 900s = **0.56 packets/sec**. Channel Rate: 0.56 ÷ 8 = 0.070 pkts/sec/channel. Channel Occupancy (**G**): 0.070 × 0.200s = **0.0140**. Effective collision rate is **<0.7%**.
 * **2,000 Sensors**:
-  * **5-Minute Interval**: Aggregate Uplink Rate: 2,000 ÷ 300s = **6.67 packets/sec**. Channel Rate: 6.67 ÷ 8 = 0.833 pkts/sec/channel. Channel Occupancy ($G$): $0.833 \times 0.200\text{s} = 0.166$. Single-SF ALOHA collision is ~28%; factoring in **SX1302/SX1303 orthogonal Spreading Factor separation** across SF7 and SF8, the **actual field packet loss is only ~5% to 8%**, making 2,000 sensors the ideal production ceiling for a single gateway.
-  * **15-Minute Interval**: Aggregate Uplink Rate: 2,000 ÷ 900s = **2.22 packets/sec**. Channel Rate: 2.22 ÷ 8 = 0.278 pkts/sec/channel. Channel Occupancy ($G$): $0.278 \times 0.200\text{s} = 0.0556$. Factoring in SF orthogonality, **actual field packet loss drops to <2%**.
+  * **5-Minute Interval**: Aggregate Uplink Rate: 2,000 ÷ 300s = **6.67 packets/sec**. Channel Rate: 6.67 ÷ 8 = 0.833 pkts/sec/channel. Channel Occupancy (**G**): 0.833 × 0.200s = **0.166**. Single-SF ALOHA collision is ~28%; factoring in **SX1302/SX1303 orthogonal Spreading Factor separation** across SF7 and SF8, the **actual field packet loss is only ~5% to 8%**, making 2,000 sensors the ideal production ceiling for a single gateway.
+  * **15-Minute Interval**: Aggregate Uplink Rate: 2,000 ÷ 900s = **2.22 packets/sec**. Channel Rate: 2.22 ÷ 8 = 0.278 pkts/sec/channel. Channel Occupancy (**G**): 0.278 × 0.200s = **0.0556**. Factoring in SF orthogonality, **actual field packet loss drops to <2%**.
 * **4,000 Sensors (Commercial Scale)**:
   * **5-Minute Interval**: Aggregate Uplink Rate: 4,000 ÷ 300s = **13.33 packets/sec**. Channel Rate: 13.33 ÷ 8 = 1.667 pkts/sec/channel. Uncoordinated collision rate climbs to **14%–18%**; deploying a **second 8-channel gateway** cuts collision rates in half (<7%).
   * **15-Minute Interval**: Aggregate Uplink Rate: 4,000 ÷ 900s = **4.44 packets/sec**. Channel Rate: 4.44 ÷ 8 = 0.556 pkts/sec/channel. Collision rate remains **~4%–5%**, enabling a single 8-channel gateway to support the entire 4,000-sensor deployment reliably.
@@ -244,7 +244,7 @@ A fleet of 4,000 sensors generates:
 2. **NVMe Write Endurance (TBW)**: Enterprise and consumer M.2 NVMe SSDs (e.g., Kingston NV2, Crucial P3) feature endurance ratings of 150 to 300+ Terabytes Written (TBW). Writing ~4 GB to ~44 GB annually produces **less than 0.03% write wear per year**, ensuring multi-decade flash longevity.
 3. **Operational Power & RF Optimization via 15-Minute Interval**:
    * **Actionability Principle**: A 15-minute transmission cadence represents industry best practice whenever physical parameter change rates are not operationally actionable below 5 minutes. In environmental sensing, viticulture, and agricultural telemetry, root-zone matric water potential and canopy temperature shift gradually over hours; sub-5-minute sampling adds zero agronomic decision value while congesting the RF spectrum.
-   * Selecting the **optional 15-minute transmission cadence** reduces RF channel occupancy by $3\times$, cuts sensor battery drain by ~66%, and allows a **single 8-channel gateway to support 4,000+ sensors** with <5% collision rates.
+   * Selecting the **optional 15-minute transmission cadence** reduces RF channel occupancy by 3×, cuts sensor battery drain by ~66%, and allows a **single 8-channel gateway to support 4,000+ sensors** with <5% collision rates.
 4. **Gateway Scaling Path**:
    * For **up to 2,000–2,500 sensors (5-min cadence)** or **up to 4,500 sensors (15-min cadence)**: A single 8-channel gateway provides rock-solid, production-grade reliability (<8% packet collision rate).
    * For **larger fleets or high-density deployments**: The Super6C cluster handles the ingestion seamlessly (<4% CPU draw). To keep RF packet collisions under 5% at 5-minute intervals for 4,000+ nodes, deploy a **second 8-channel outdoor gateway** ($300–$400) connected via Wi-Fi or Ethernet. ChirpStack v4 automatically handles frame deduplication across all gateways with zero configuration overhead.
