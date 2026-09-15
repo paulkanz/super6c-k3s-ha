@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Modeled physical RF airtime constraints, Time on Air (ToA), US915 FCC 400ms dwell time compliance, and uncoordinated Pure ALOHA packet collision probabilities for an 8-channel gateway.
   - Sized data generation, monthly growth, and retention timelines for 115-byte payloads at 5-minute intervals (with optional 15-minute cadence) across 500-sensor (~200 yrs compressed @ 5m / ~600 yrs @ 15m) and 2,000-sensor (~50 yrs compressed @ 5m / ~150 yrs @ 15m) fleets on a 200 GB usable NVMe storage partition.
   - Documented Wi-Fi backhaul utilization (<40 kbps) and multi-gateway spatial scaling architectures.
+- **Zero-Disk Ansible Vault Credential Architecture** ([`docs/SECURITY_ANSIBLE_VAULT_ZERO_DISK_CREDENTIALS.md`](SECURITY_ANSIBLE_VAULT_ZERO_DISK_CREDENTIALS.md)):
+  - Published comprehensive operational security guide detailing threat vectors of plaintext `.vault_pass` files on disk (accidental commits, malware, forensic residuals, unencrypted backups).
+  - Provided executable script implementations for macOS Keychain Services CLI, 1Password / Bitwarden, GPG/YubiKey hardware tokens, and ephemeral environment variables to achieve full compliance with NIST SP 800-53 (IA-5, SC-12, SC-28) and SOC 2 (CC6.1).
 
 ### Planned
 - Automated rolling reboot with Kubernetes node drain/uncordon in maintenance playbooks.

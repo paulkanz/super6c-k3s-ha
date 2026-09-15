@@ -193,6 +193,7 @@ Real-world telemetry is captured by custom low-power SDI-12 / RS485 soil moistur
 │   ├── OPENWRT_ALT_PORT_ROUTING.md # Alternate port (8443) routing & legacy gateway coexistence guide
 │   ├── ROADMAP.md                 # Enhancements, compliance backlog & architectural roadmap
 │   ├── SDD.md                     # System Design Description & engineering specification
+│   ├── SECURITY_ANSIBLE_VAULT_ZERO_DISK_CREDENTIALS.md # Zero-disk secrets management guide (macOS Keychain, GPG, 1Password, RAM)
 │   ├── TRAEFIK_SECURITY_AND_RATELIMITING.md # Ingress security, rate limiting, and DDoS defense reference
 │   ├── field-test-soil.jpg        # In-situ vineyard field deployment of multi-depth soil probe
 │   ├── lab-test-soil.jpg          # Laboratory sensor calibration and payload verification
@@ -283,6 +284,10 @@ The repository includes an unencrypted template file [`inventory/group_vars/all/
    vault_password_file = .vault_pass
    ```
    *(Alternatively, pass `--vault-password-file .vault_pass` or `--ask-vault-pass` on the CLI).*
+
+   > [!TIP]
+   > **Zero-Disk Credential Hardening**:  
+   > To avoid storing vault passphrases in plaintext on your workstation (`.vault_pass`), see [`docs/SECURITY_ANSIBLE_VAULT_ZERO_DISK_CREDENTIALS.md`](docs/SECURITY_ANSIBLE_VAULT_ZERO_DISK_CREDENTIALS.md) for production-grade zero-disk patterns utilizing the **macOS Keychain Services CLI**, **1Password / Bitwarden**, **GPG/YubiKey hardware tokens**, or **ephemeral environment variables**.
 
 5. **Viewing or Editing Secrets in the Future**:
    ```bash
