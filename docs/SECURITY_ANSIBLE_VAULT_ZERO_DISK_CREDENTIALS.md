@@ -150,7 +150,7 @@ Ideal for automated runners (GitHub Actions, GitLab CI) and temporary local shel
 #### Local Terminal Usage
 Pass directly during playbook invocation:
 ```bash
-ANSIBLE_VAULT_PASSWORD="YOUR_MASTER_VAULT_PASSWORD" ansible-playbook -i inventory/hosts.ini playbooks/site.yml
+ANSIBLE_VAULT_PASSWORD="YOUR_MASTER_VAULT_PASSWORD" ansible-playbook -i inventory/hosts.yml playbooks/site.yml
 ```
 Or export for the duration of a session (disappears when terminal window closes):
 ```bash
@@ -163,7 +163,7 @@ export ANSIBLE_VAULT_PASSWORD="YOUR_MASTER_VAULT_PASSWORD"
   env:
     ANSIBLE_VAULT_PASSWORD: ${{ secrets.SUPER6C_VAULT_PASSWORD }}
   run: |
-    ansible-playbook -i inventory/hosts.ini playbooks/site.yml
+    ansible-playbook -i inventory/hosts.yml playbooks/site.yml
 ```
 
 ---
@@ -173,7 +173,7 @@ The password is requested interactively and held only in volatile memory for the
 
 * **Via CLI flag:**
   ```bash
-  ansible-playbook -i inventory/hosts.ini playbooks/site.yml --ask-vault-pass
+  ansible-playbook -i inventory/hosts.yml playbooks/site.yml --ask-vault-pass
   ```
 * **Enforced in `ansible.cfg`:**
   ```ini
