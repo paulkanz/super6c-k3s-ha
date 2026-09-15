@@ -14,7 +14,7 @@ This framework delivers:
 - **True High Availability (HA):** 3-node embedded etcd control-plane with automated failover via **kube-vip** Layer 2 ARP virtual IP (`192.168.1.130`).
 - **Distributed Block Storage:** **Longhorn** distributed persistent storage with 3-way cross-node volume replication on NVMe to safeguard historical telemetry and actuator state.
 - **Cluster & Storage Web Dashboards:** **Headlamp** cluster-wide Web UI and **Longhorn UI** unified under `http://192.168.1.130/` and secured HTTPS domains.
-- **Enterprise Security Hardening:** Defense-grade host and workload baseline aligned to **NIST SP 800-53 Rev 5**, **SOC 2 Type II**, and **CIS Benchmarks** (auditd 99 rules, fail2ban, umask 027, kernel blacklist, Restricted PSA).
+- **Enterprise Security Hardening:** Industrial edge host and workload baseline aligned to **NIST SP 800-53 Rev 5**, **SOC 2 Type II**, and **CIS Benchmarks** (auditd 99 rules, fail2ban, umask 027, kernel blacklist, Restricted PSA).
 - **Ingress Perimeter Defense:** Traefik IP allowlisting restricting admin dashboards to LAN/VPN (`192.168.0.0/16`, `10.0.0.0/8`), cluster-wide TLS 1.2+ cipher suites, automated HTTP $\rightarrow$ HTTPS 308 redirect, and HSTS headers.
 - **Modular Playbook Design:** Clean, idempotent playbooks for hardware bootstrap, OS patching, compliance hardening, cluster installation, UI addons, and verification.
 - **IoT & Telemetry Roadmap:** Full architectural blueprint and capacity sizing for upcoming **ChirpStack v4**, **ThingsBoard CE**, and MQTT broker deployment (see [`docs/IOT_LORAWAN_STACK_ARCHITECTURE.md`](docs/IOT_LORAWAN_STACK_ARCHITECTURE.md), [`docs/LORAWAN_CAPACITY_AND_STORAGE_ANALYSIS.md`](docs/LORAWAN_CAPACITY_AND_STORAGE_ANALYSIS.md), and [`docs/ROADMAP.md`](docs/ROADMAP.md)).
