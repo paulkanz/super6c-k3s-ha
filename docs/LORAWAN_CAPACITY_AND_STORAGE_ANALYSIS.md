@@ -63,16 +63,16 @@ $$P_{\text{collision}} \approx 1 - e^{-2G}$$
 
 *(where $G$ is the normalized channel traffic load across the 8 gateway frequency channels)*
 
-With a fleet average Time on Air of $\sim 200 \text{ ms}$ (SF7/SF8 mix):
+With a fleet average Time on Air of ~200 ms (SF7/SF8 mix):
 * **500 Sensors**:
-  * **5-Minute Interval**: Aggregate Uplink Rate: $500 \div 300\text{s} = \mathbf{1.67 \text{ packets/sec}}$. Channel Rate: $1.67 \div 8 = 0.208 \text{ pkts/sec/channel}$. Channel Occupancy ($G$): $0.208 \times 0.200\text{s} = 0.0416$. Effective collision rate with SX1302/SX1303 multi-SF orthogonality is **<2%**.
-  * **15-Minute Interval**: Aggregate Uplink Rate: $500 \div 900\text{s} = \mathbf{0.56 \text{ packets/sec}}$. Channel Rate: $0.56 \div 8 = 0.070 \text{ pkts/sec/channel}$. Channel Occupancy ($G$): $0.070 \times 0.200\text{s} = 0.0140$. Effective collision rate is **<0.7%**.
+  * **5-Minute Interval**: Aggregate Uplink Rate: 500 ÷ 300s = **1.67 packets/sec**. Channel Rate: 1.67 ÷ 8 = 0.208 pkts/sec/channel. Channel Occupancy ($G$): $0.208 \times 0.200\text{s} = 0.0416$. Effective collision rate with SX1302/SX1303 multi-SF orthogonality is **<2%**.
+  * **15-Minute Interval**: Aggregate Uplink Rate: 500 ÷ 900s = **0.56 packets/sec**. Channel Rate: 0.56 ÷ 8 = 0.070 pkts/sec/channel. Channel Occupancy ($G$): $0.070 \times 0.200\text{s} = 0.0140$. Effective collision rate is **<0.7%**.
 * **2,000 Sensors**:
-  * **5-Minute Interval**: Aggregate Uplink Rate: $2,000 \div 300\text{s} = \mathbf{6.67 \text{ packets/sec}}$. Channel Rate: $6.67 \div 8 = 0.833 \text{ pkts/sec/channel}$. Channel Occupancy ($G$): $0.833 \times 0.200\text{s} = 0.166$. Single-SF ALOHA collision is ~28%; factoring in **SX1302/SX1303 orthogonal Spreading Factor separation** across SF7 and SF8, the **actual field packet loss is only ~5% to 8%**, making 2,000 sensors the ideal production ceiling for a single gateway.
-  * **15-Minute Interval**: Aggregate Uplink Rate: $2,000 \div 900\text{s} = \mathbf{2.22 \text{ packets/sec}}$. Channel Rate: $2.22 \div 8 = 0.278 \text{ pkts/sec/channel}$. Channel Occupancy ($G$): $0.278 \times 0.200\text{s} = 0.0556$. Factoring in SF orthogonality, **actual field packet loss drops to <2%**.
+  * **5-Minute Interval**: Aggregate Uplink Rate: 2,000 ÷ 300s = **6.67 packets/sec**. Channel Rate: 6.67 ÷ 8 = 0.833 pkts/sec/channel. Channel Occupancy ($G$): $0.833 \times 0.200\text{s} = 0.166$. Single-SF ALOHA collision is ~28%; factoring in **SX1302/SX1303 orthogonal Spreading Factor separation** across SF7 and SF8, the **actual field packet loss is only ~5% to 8%**, making 2,000 sensors the ideal production ceiling for a single gateway.
+  * **15-Minute Interval**: Aggregate Uplink Rate: 2,000 ÷ 900s = **2.22 packets/sec**. Channel Rate: 2.22 ÷ 8 = 0.278 pkts/sec/channel. Channel Occupancy ($G$): $0.278 \times 0.200\text{s} = 0.0556$. Factoring in SF orthogonality, **actual field packet loss drops to <2%**.
 * **4,000 Sensors (Commercial Scale)**:
-  * **5-Minute Interval**: Aggregate Uplink Rate: $4,000 \div 300\text{s} = \mathbf{13.33 \text{ packets/sec}}$. Channel Rate: $13.33 \div 8 = 1.667 \text{ pkts/sec/channel}$. Uncoordinated collision rate climbs to **14%–18%**; deploying a **second 8-channel gateway** cuts collision rates in half (<7%).
-  * **15-Minute Interval**: Aggregate Uplink Rate: $4,000 \div 900\text{s} = \mathbf{4.44 \text{ packets/sec}}$. Channel Rate: $4.44 \div 8 = 0.556 \text{ pkts/sec/channel}$. Collision rate remains **~4%–5%**, enabling a single 8-channel gateway to support the entire 4,000-sensor deployment reliably.
+  * **5-Minute Interval**: Aggregate Uplink Rate: 4,000 ÷ 300s = **13.33 packets/sec**. Channel Rate: 13.33 ÷ 8 = 1.667 pkts/sec/channel. Uncoordinated collision rate climbs to **14%–18%**; deploying a **second 8-channel gateway** cuts collision rates in half (<7%).
+  * **15-Minute Interval**: Aggregate Uplink Rate: 4,000 ÷ 900s = **4.44 packets/sec**. Channel Rate: 4.44 ÷ 8 = 0.556 pkts/sec/channel. Collision rate remains **~4%–5%**, enabling a single 8-channel gateway to support the entire 4,000-sensor deployment reliably.
 
 ---
 
@@ -83,14 +83,14 @@ The Wi-Fi link between the 8-channel gateway and the DeskPi Super6C cluster carr
 * **Frame Size**: ~360 bytes per packet (115-byte binary payload + JSON encapsulation + RF metadata: RSSI, SNR, timestamp, frequency).
 * **Network Throughput**:
   * **500 Sensors**:
-    * 5-Min Cadence: $1.67 \text{ pkts/sec} \times 360 \text{ bytes} \approx \mathbf{0.60 \text{ KB/sec}}$ (**4.8 kbps**).
-    * 15-Min Cadence: $0.56 \text{ pkts/sec} \times 360 \text{ bytes} \approx \mathbf{0.20 \text{ KB/sec}}$ (**1.6 kbps**).
+    * 5-Min Cadence: 1.67 pkts/sec × 360 bytes ≈ **0.60 KB/sec** (**4.8 kbps**).
+    * 15-Min Cadence: 0.56 pkts/sec × 360 bytes ≈ **0.20 KB/sec** (**1.6 kbps**).
   * **2,000 Sensors**:
-    * 5-Min Cadence: $6.67 \text{ pkts/sec} \times 360 \text{ bytes} \approx \mathbf{2.40 \text{ KB/sec}}$ (**19.2 kbps**).
-    * 15-Min Cadence: $2.22 \text{ pkts/sec} \times 360 \text{ bytes} \approx \mathbf{0.80 \text{ KB/sec}}$ (**6.4 kbps**).
+    * 5-Min Cadence: 6.67 pkts/sec × 360 bytes ≈ **2.40 KB/sec** (**19.2 kbps**).
+    * 15-Min Cadence: 2.22 pkts/sec × 360 bytes ≈ **0.80 KB/sec** (**6.4 kbps**).
   * **4,000 Sensors**:
-    * 5-Min Cadence: $13.33 \text{ pkts/sec} \times 360 \text{ bytes} \approx \mathbf{4.80 \text{ KB/sec}}$ (**38.4 kbps**).
-    * 15-Min Cadence: $4.44 \text{ pkts/sec} \times 360 \text{ bytes} \approx \mathbf{1.60 \text{ KB/sec}}$ (**12.8 kbps**).
+    * 5-Min Cadence: 13.33 pkts/sec × 360 bytes ≈ **4.80 KB/sec** (**38.4 kbps**).
+    * 15-Min Cadence: 4.44 pkts/sec × 360 bytes ≈ **1.60 KB/sec** (**12.8 kbps**).
 * **Wi-Fi Utilization**: Even on an entry-level 2.4 GHz 802.11n Wi-Fi link negotiating at 20–54 Mbps, this traffic consumes **less than 0.05% of available wireless bandwidth**.
 
 ---
@@ -104,14 +104,14 @@ The Wi-Fi link between the 8-channel gateway and the DeskPi Super6C cluster carr
 ### 4.2. Per-Sensor Telemetry Volume (115-Byte Payloads)
 * **5-Minute Cadence**:
   * Packets Generated: 288 / day | 8,760 / month | 105,120 / year
-  * Daily Raw Payload: $288 \times 115\text{ B} = \mathbf{33.12 \text{ KB / day}}$
-  * Monthly Raw Payload: $8,760 \times 115\text{ B} \approx \mathbf{1.01 \text{ MB / month}}$
-  * Annual Raw Payload: $105,120 \times 115\text{ B} \approx \mathbf{12.09 \text{ MB / year}}$
+  * Daily Raw Payload: 288 × 115 B = **33.12 KB / day**
+  * Monthly Raw Payload: 8,760 × 115 B ≈ **1.01 MB / month**
+  * Annual Raw Payload: 105,120 × 115 B ≈ **12.09 MB / year**
 * **Optional 15-Minute Cadence**:
   * Packets Generated: 96 / day | 2,920 / month | 35,040 / year
-  * Daily Raw Payload: $96 \times 115\text{ B} = \mathbf{11.04 \text{ KB / day}}$
-  * Monthly Raw Payload: $2,920 \times 115\text{ B} \approx \mathbf{0.34 \text{ MB / month}}$
-  * Annual Raw Payload: $35,040 \times 115\text{ B} \approx \mathbf{4.03 \text{ MB / year}}$
+  * Daily Raw Payload: 96 × 115 B = **11.04 KB / day**
+  * Monthly Raw Payload: 2,920 × 115 B ≈ **0.34 MB / month**
+  * Annual Raw Payload: 35,040 × 115 B ≈ **4.03 MB / year**
 
 ### 4.3. On-Disk Database Footprint per Sensor
 
@@ -119,21 +119,21 @@ The Wi-Fi link between the 8-channel gateway and the DeskPi Super6C cluster carr
 TimescaleDB partitions sensor hypertables and automatically compresses historical chunks older than 7 days using Gorilla/XOR for floating-point values, delta-of-delta for timestamps, and dictionary run-length encoding for identifiers:
 * Compressed footprint per packet: **~19 bytes on disk** (~84% compression against raw payload + index overhead).
 * **5-Minute Cadence**:
-  * Per Sensor Monthly: $8,760 \text{ pkts} \times 19\text{ B} \approx \mathbf{166.4 \text{ KB / month}}$.
-  * Per Sensor Annually: $105,120 \text{ pkts} \times 19\text{ B} \approx \mathbf{2.00 \text{ MB / year}}$.
+  * Per Sensor Monthly: 8,760 pkts × 19 B ≈ **166.4 KB / month**.
+  * Per Sensor Annually: 105,120 pkts × 19 B ≈ **2.00 MB / year**.
 * **Optional 15-Minute Cadence**:
-  * Per Sensor Monthly: $2,920 \text{ pkts} \times 19\text{ B} \approx \mathbf{55.5 \text{ KB / month}}$.
-  * Per Sensor Annually: $35,040 \text{ pkts} \times 19\text{ B} \approx \mathbf{0.67 \text{ MB / year}}$.
+  * Per Sensor Monthly: 2,920 pkts × 19 B ≈ **55.5 KB / month**.
+  * Per Sensor Annually: 35,040 pkts × 19 B ≈ **0.67 MB / year**.
 
 #### Mode B: Uncompressed PostgreSQL Row Storage (Conservative Baseline)
 Standard uncompressed table rows including tuple headers (24B), timestamp (8B), UUID (16B), decoded numeric columns (70B), and dual B-Tree indexes (35B):
 * Uncompressed footprint per packet: **~210 bytes on disk**.
 * **5-Minute Cadence**:
-  * Per Sensor Monthly: $8,760 \text{ pkts} \times 210\text{ B} \approx \mathbf{1.84 \text{ MB / month}}$.
-  * Per Sensor Annually: $105,120 \text{ pkts} \times 210\text{ B} \approx \mathbf{22.08 \text{ MB / year}}$.
+  * Per Sensor Monthly: 8,760 pkts × 210 B ≈ **1.84 MB / month**.
+  * Per Sensor Annually: 105,120 pkts × 210 B ≈ **22.08 MB / year**.
 * **Optional 15-Minute Cadence**:
-  * Per Sensor Monthly: $2,920 \text{ pkts} \times 210\text{ B} \approx \mathbf{0.61 \text{ MB / month}}$.
-  * Per Sensor Annually: $35,040 \text{ pkts} \times 210\text{ B} \approx \mathbf{7.36 \text{ MB / year}}$.
+  * Per Sensor Monthly: 2,920 pkts × 210 B ≈ **0.61 MB / month**.
+  * Per Sensor Annually: 35,040 pkts × 210 B ≈ **7.36 MB / year**.
 
 ---
 
@@ -147,21 +147,21 @@ A fleet of 500 sensors generates:
   * **TimescaleDB Columnar Compressed**:
     * Monthly Disk Growth: **~83.2 MB / month**
     * Annual Disk Growth: **~1.00 GB / year**
-    * **Retention Lifespan on 200 GB NVMe**: $\frac{200\text{ GB}}{1.00\text{ GB/yr}} \approx$ **$\mathbf{200 \text{ Years}}$ of continuous sensor history**.
+    * **Retention Lifespan on 200 GB NVMe**: 200 GB ÷ 1.00 GB/yr ≈ **~200 Years** of continuous sensor history.
   * **Uncompressed Standard Tables**:
     * Monthly Disk Growth: **~920 MB / month**
     * Annual Disk Growth: **~11.04 GB / year**
-    * **Retention Lifespan on 200 GB NVMe**: $\frac{200\text{ GB}}{11.04\text{ GB/yr}} \approx$ **$\mathbf{18.1 \text{ Years}}$ of continuous unpurged data**.
+    * **Retention Lifespan on 200 GB NVMe**: 200 GB ÷ 11.04 GB/yr ≈ **~18.1 Years** of continuous unpurged data.
 * **Optional 15-Minute Cadence** (48,000 packets/day | 17.52 million packets/year):
   * Raw Payload: ~167.9 MB / month | **~2.01 GB / year**
   * **TimescaleDB Columnar Compressed**:
     * Monthly Disk Growth: **~27.7 MB / month**
     * Annual Disk Growth: **~0.33 GB / year**
-    * **Retention Lifespan on 200 GB NVMe**: $\frac{200\text{ GB}}{0.33\text{ GB/yr}} \approx$ **$\mathbf{600 \text{ Years}}$ of continuous history**.
+    * **Retention Lifespan on 200 GB NVMe**: 200 GB ÷ 0.33 GB/yr ≈ **~600 Years** of continuous history.
   * **Uncompressed Standard Tables**:
     * Monthly Disk Growth: **~306.6 MB / month**
     * Annual Disk Growth: **~3.68 GB / year**
-    * **Retention Lifespan on 200 GB NVMe**: $\frac{200\text{ GB}}{3.68\text{ GB/yr}} \approx$ **$\mathbf{54.3 \text{ Years}}$ of unpurged data**.
+    * **Retention Lifespan on 200 GB NVMe**: 200 GB ÷ 3.68 GB/yr ≈ **~54.3 Years** of unpurged data.
 
 ---
 
@@ -173,21 +173,21 @@ A fleet of 2,000 sensors generates:
   * **TimescaleDB Columnar Compressed**:
     * Monthly Disk Growth: **~332.9 MB / month**
     * Annual Disk Growth: **~4.00 GB / year**
-    * **Retention Lifespan on 200 GB NVMe**: $\frac{200\text{ GB}}{4.00\text{ GB/yr}} \approx$ **$\mathbf{50.0 \text{ Years}}$ of continuous sensor history**.
+    * **Retention Lifespan on 200 GB NVMe**: 200 GB ÷ 4.00 GB/yr ≈ **~50.0 Years** of continuous sensor history.
   * **Uncompressed Standard Tables**:
     * Monthly Disk Growth: **~3.68 GB / month**
     * Annual Disk Growth: **~44.15 GB / year**
-    * **Retention Lifespan on 200 GB NVMe**: $\frac{200\text{ GB}}{44.15\text{ GB/yr}} \approx$ **$\mathbf{4.53 \text{ Years}}$ before needing partition pruning or archival**.
+    * **Retention Lifespan on 200 GB NVMe**: 200 GB ÷ 44.15 GB/yr ≈ **~4.53 Years** before needing partition pruning or archival.
 * **Optional 15-Minute Cadence** (192,000 packets/day | 70.08 million packets/year):
   * Raw Payload: ~672 MB / month | **~8.06 GB / year**
   * **TimescaleDB Columnar Compressed**:
     * Monthly Disk Growth: **~111.0 MB / month**
     * Annual Disk Growth: **~1.33 GB / year**
-    * **Retention Lifespan on 200 GB NVMe**: $\frac{200\text{ GB}}{1.33\text{ GB/yr}} \approx$ **$\mathbf{150 \text{ Years}}$ of continuous sensor history**.
+    * **Retention Lifespan on 200 GB NVMe**: 200 GB ÷ 1.33 GB/yr ≈ **~150 Years** of continuous sensor history.
   * **Uncompressed Standard Tables**:
     * Monthly Disk Growth: **~1.23 GB / month**
     * Annual Disk Growth: **~14.72 GB / year**
-    * **Retention Lifespan on 200 GB NVMe**: $\frac{200\text{ GB}}{14.72\text{ GB/yr}} \approx$ **$\mathbf{13.6 \text{ Years}}$ of unpurged data**.
+    * **Retention Lifespan on 200 GB NVMe**: 200 GB ÷ 14.72 GB/yr ≈ **~13.6 Years** of unpurged data.
 
 ---
 
@@ -199,21 +199,21 @@ A fleet of 4,000 sensors generates:
   * **TimescaleDB Columnar Compressed**:
     * Monthly Disk Growth: **~665.8 MB / month**
     * Annual Disk Growth: **~7.99 GB / year**
-    * **Retention Lifespan on 200 GB NVMe**: $\frac{200\text{ GB}}{7.99\text{ GB/yr}} \approx$ **$\mathbf{25.0 \text{ Years}}$ of continuous sensor history**.
+    * **Retention Lifespan on 200 GB NVMe**: 200 GB ÷ 7.99 GB/yr ≈ **~25.0 Years** of continuous sensor history.
   * **Uncompressed Standard Tables**:
     * Monthly Disk Growth: **~7.36 GB / month**
     * Annual Disk Growth: **~88.30 GB / year**
-    * **Retention Lifespan on 200 GB NVMe**: $\frac{200\text{ GB}}{88.30\text{ GB/yr}} \approx$ **$\mathbf{2.26 \text{ Years}}$ before requiring archival**.
+    * **Retention Lifespan on 200 GB NVMe**: 200 GB ÷ 88.30 GB/yr ≈ **~2.26 Years** before requiring archival.
 * **Optional 15-Minute Cadence** (384,000 packets/day | 140.16 million packets/year):
   * Raw Payload: ~1.34 GB / month | **~16.12 GB / year**
   * **TimescaleDB Columnar Compressed**:
     * Monthly Disk Growth: **~221.9 MB / month**
     * Annual Disk Growth: **~2.66 GB / year**
-    * **Retention Lifespan on 200 GB NVMe**: $\frac{200\text{ GB}}{2.66\text{ GB/yr}} \approx$ **$\mathbf{75.1 \text{ Years}}$ of continuous history**.
+    * **Retention Lifespan on 200 GB NVMe**: 200 GB ÷ 2.66 GB/yr ≈ **~75.1 Years** of continuous history.
   * **Uncompressed Standard Tables**:
     * Monthly Disk Growth: **~2.45 GB / month**
     * Annual Disk Growth: **~29.43 GB / year**
-    * **Retention Lifespan on 200 GB NVMe**: $\frac{200\text{ GB}}{29.43\text{ GB/yr}} \approx$ **$\mathbf{6.80 \text{ Years}}$ of unpurged data**.
+    * **Retention Lifespan on 200 GB NVMe**: 200 GB ÷ 29.43 GB/yr ≈ **~6.80 Years** of unpurged data.
 
 ---
 

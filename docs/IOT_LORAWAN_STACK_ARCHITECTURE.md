@@ -231,7 +231,7 @@ To evaluate the operational capacity of the cluster, we examine an enterprise-sc
 3. **Physical LoRaWAN RF Airtime (Gateway Limit)**:
    * For 115-byte physical payloads at SF7 (~190ms ToA) or SF8 (~340ms ToA):
      * **5-Minute Cadence**: A single 8-channel gateway reliably supports up to ~2,000 sensors (<8% packet collisions). A 4,000-sensor fleet requires **2 physical 8-channel gateways** to distribute RF channel load and ensure geographic coverage across vineyard blocks.
-     * **Optional 15-Minute Cadence**: Because airtime demand drops by $3\times$, a single 8-channel gateway can support **up to 4,000–5,000 sensors** with packet collision rates staying under 5%!
+     * **Optional 15-Minute Cadence**: Because airtime demand drops by 3×, a single 8-channel gateway can support **up to 4,000–5,000 sensors** with packet collision rates staying under 5%!
    * *For detailed mathematical modeling of ALOHA packet collisions, FCC 400ms dwell time compliance, and 115-byte payload retention on NVMe across 500, 2,000, and 4,000 sensors (at both 5-min and optional 15-min intervals), refer to [`docs/LORAWAN_CAPACITY_AND_STORAGE_ANALYSIS.md`](LORAWAN_CAPACITY_AND_STORAGE_ANALYSIS.md).*
 
 ---
@@ -246,14 +246,14 @@ To provision equivalent enterprise infrastructure in Amazon Web Services (US Eas
 * **Persistent Storage**: 3x 250 GB gp3 EBS Volumes (750 GB total, 3,000 IOPS) ($60.00/mo)
 * **Load Balancers & Ingress**: 1x NLB (MQTT TCP) + 1x ALB (HTTPS WSS) ($42.50/mo)
 * **Networking**: 2x NAT Gateways (HA) + Inter-AZ data replication ($100.70/mo)
-* **Total AWS EKS Cost**: **~$371.40 / month** ($\mathbf{\$4,456.80 \text{ / year}}$)
+* **Total AWS EKS Cost**: **~$371.40 / month** (**~$4,456.80 / year**)
 
 ### 7.2. Option B: AWS Native Managed Services (Serverless)
 * **AWS IoT Core**: Connectivity for 4,000 devices + 34.56M messages + Rules engine ($53.56/mo)
 * **Amazon RDS PostgreSQL (Multi-AZ)**: `db.m6g.xlarge` + 1TB gp3 ($372.50/mo)
 * **Amazon Managed Grafana**: 5 Editors ($9/ea) + 20 Viewers ($4/ea) ($125.00/mo)
 * **NAT Gateways, Transfer & CloudWatch**: ($110.70/mo)
-* **Total AWS Native Cost**: **~$661.76 / month** ($\mathbf{\$7,940.00 \text{ / year}}$)
+* **Total AWS Native Cost**: **~$661.76 / month** (**~$7,940.00 / year**)
 
 ### 7.3. Critical Cloud Cost Traps Exposed
 * **Amazon Timestream Write Fees**: Timestream charges $0.50 per million writes. At 864M metrics/month, write fees alone would cost **$432.00/month** before storage.
