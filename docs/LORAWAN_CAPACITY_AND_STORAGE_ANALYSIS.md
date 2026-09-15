@@ -39,6 +39,7 @@ When evaluating how many sensors transmitting **115-byte packets at 5-minute int
   * Uplink Frequency: 12 packets/hour = **288 packets/day** = **105,120 packets/year per sensor**.
 * **Optional Low-Power Cadence**: Every 15 minutes ($T = 900\text{ seconds}$).
   * Uplink Frequency: 4 packets/hour = **96 packets/day** = **35,040 packets/year per sensor**.
+  * **Architectural Best Practice**: A 15-minute interval is recommended as industry best practice whenever the underlying data change rate is not actionable below 5 minutes (e.g., deep soil moisture percolation, diurnal temperature curves). Operating at 15 minutes cuts RF airtime contention by 66%, extends field node battery lifespan $3\times$, and triples single-gateway fleet capacity.
 * **Payload Size**: **115 bytes** (representing rich multi-sensor payloads, e.g., 3-depth soil moisture/temperature, canopy climate, battery voltage, solar metrics, and diagnostic flags).
 
 ### 2.2. Time on Air (ToA) & Regulatory Dwell Time Limits
@@ -242,7 +243,7 @@ A fleet of 4,000 sensors generates:
 1. **Storage is Never the Limiting Factor**: Even under the full load of 2,000 sensors transmitting large 115-byte payloads every 5 minutes, TimescaleDB columnar compression consumes only **~4.00 GB per year**. The 200 GB usable NVMe partition provides **50 years of unpurged historical data retention** (or **150 years** under a 15-minute cadence).
 2. **NVMe Write Endurance (TBW)**: Enterprise and consumer M.2 NVMe SSDs (e.g., Kingston NV2, Crucial P3) feature endurance ratings of 150 to 300+ Terabytes Written (TBW). Writing ~4 GB to ~44 GB annually produces **less than 0.03% write wear per year**, ensuring multi-decade flash longevity.
 3. **Operational Power & RF Optimization via 15-Minute Interval**:
-   * For soil moisture, ground temperature, and canopy metrics in agriculture and environmental sensing, soil dynamics change over hours rather than minutes.
+   * **Actionability Principle**: A 15-minute transmission cadence represents industry best practice whenever physical parameter change rates are not operationally actionable below 5 minutes. In environmental sensing, viticulture, and agricultural telemetry, root-zone matric water potential and canopy temperature shift gradually over hours; sub-5-minute sampling adds zero agronomic decision value while congesting the RF spectrum.
    * Selecting the **optional 15-minute transmission cadence** reduces RF channel occupancy by $3\times$, cuts sensor battery drain by ~66%, and allows a **single 8-channel gateway to support 4,000+ sensors** with <5% collision rates.
 4. **Gateway Scaling Path**:
    * For **up to 2,000–2,500 sensors (5-min cadence)** or **up to 4,500 sensors (15-min cadence)**: A single 8-channel gateway provides rock-solid, production-grade reliability (<8% packet collision rate).

@@ -195,7 +195,8 @@ Step 5: Visualization & Alerting (CM4 Workers)
 
 To evaluate the operational capacity of the cluster, we examine an enterprise-scale commercial agricultural workload (e.g., across 200 monitoring zones / vineyard blocks):
 * **Payload Size Baseline**: **115-byte** binary packet per transmission (encapsulating ~25 multi-depth SDI-12 soil moisture/temperature, microclimate, battery/solar metrics, and health flags).
-* **Ingestion Cadence**: Transmitting every **5 minutes (300s)** as the primary high-resolution monitoring cadence, with an **optional 15-minute (900s)** power-optimized / conservative telemetry profile.
+* **Ingestion Cadence**: Transmitting every **5 minutes (300s)** as the high-resolution baseline, alongside an **optional 15-minute (900s)** cadence.
+  * *Operational Best Practice*: A **15-minute interval is recommended as industry best practice** when the underlying data change rate (e.g., root-zone soil moisture depletion, temperature gradients) is slow and not actionable on sub-5-minute timescales. Operating at 15-minute intervals cuts RF channel contention by 66%, triples field battery life, and triples single-gateway device capacity.
 * **Commercial Fleet Baseline**: **4,000 active sensors** generating rich telemetry across 200 vineyard blocks (20 sensors per block).
 
 ### 6.1. Workload Calculations: 5-Minute vs. Optional 15-Minute Cadence
