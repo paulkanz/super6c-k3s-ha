@@ -287,7 +287,7 @@ The repository includes an unencrypted template file [`inventory/group_vars/all/
 
    > [!TIP]
    > **Zero-Disk Credential Hardening**:  
-   > To avoid storing vault passphrases in plaintext on your workstation (`.vault_pass`), see [`docs/SECURITY_ANSIBLE_VAULT_ZERO_DISK_CREDENTIALS.md`](docs/SECURITY_ANSIBLE_VAULT_ZERO_DISK_CREDENTIALS.md) for production-grade zero-disk patterns utilizing the **macOS Keychain Services CLI**, **1Password / Bitwarden**, **GPG/YubiKey hardware tokens**, or **ephemeral environment variables**.
+   > To avoid storing vault passphrases in plaintext on your workstation (`.vault_pass`), see [`docs/SECURITY_ANSIBLE_VAULT_ZERO_DISK_CREDENTIALS.md`](docs/SECURITY_ANSIBLE_VAULT_ZERO_DISK_CREDENTIALS.md) for zero-disk credential patterns utilizing the **macOS Keychain Services CLI**, **1Password / Bitwarden**, **GPG/YubiKey hardware tokens**, or **ephemeral environment variables**.
 
 5. **Viewing or Editing Secrets in the Future**:
    ```bash

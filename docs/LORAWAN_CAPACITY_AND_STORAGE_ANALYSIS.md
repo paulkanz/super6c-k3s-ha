@@ -23,10 +23,10 @@ When evaluating how many sensors transmitting **115-byte packets at 5-minute int
 | :--- | :---: | :---: | :---: | :---: | :--- | :---: |
 | **High Reliability Tier** | **500 Sensors** | **5 min** | **<2% (Near Zero)** | **1x 8-Channel Gateway** | ⭐⭐⭐⭐⭐ **Optimal**. Zero congestion. | **~200 Years** *(compressed)*<br>**~18.1 Years** *(uncompressed)* |
 | | | *15 min* | *<0.7%* | *1x 8-Channel Gateway* | ⭐⭐⭐⭐⭐ **Ultra-Silent**. Negligible RF load. | **~600 Years** *(compressed)*<br>**~54.3 Years** *(uncompressed)* |
-| **Commercial Sweet Spot** | **2,000 Sensors** | **5 min** | **~5% – 8%** | **1x 8-Channel Gateway** | ⭐⭐⭐⭐⭐ **Production Grade**. Excellent fidelity. | **~50 Years** *(compressed)*<br>**~4.53 Years** *(uncompressed)* |
+| **Commercial Sweet Spot** | **2,000 Sensors** | **5 min** | **~5% – 8%** | **1x 8-Channel Gateway** | ⭐⭐⭐⭐⭐ **Enterprise Standard**. Excellent fidelity. | **~50 Years** *(compressed)*<br>**~4.53 Years** *(uncompressed)* |
 | | | *15 min* | *<2%* | *1x 8-Channel Gateway* | ⭐⭐⭐⭐⭐ **Optimal Production**. Minimal collisions. | **~150 Years** *(compressed)*<br>**~13.6 Years** *(uncompressed)* |
 | **Operational Ceiling** | **4,000 Sensors** | **5 min** | **14% – 18%** | **2x 8-Channel Gateways (Rec.)** | ⭐⭐⭐⭐☆ **Feasible for Trends** (1 GW) / ⭐⭐⭐⭐⭐ (2 GWs) | **~25 Years** *(compressed)*<br>**~2.26 Years** *(uncompressed)* |
-| | | *15 min* | *~4% – 5%* | *1x 8-Channel Gateway* | ⭐⭐⭐⭐⭐ **Production Grade on Single Gateway** | **~75 Years** *(compressed)*<br>**~6.80 Years** *(uncompressed)* |
+| | | *15 min* | *~4% – 5%* | *1x 8-Channel Gateway* | ⭐⭐⭐⭐⭐ **Optimal Reliability on Single Gateway** | **~75 Years** *(compressed)*<br>**~6.80 Years** *(uncompressed)* |
 | **RF ALOHA Cliff** | **>5,000 Sensors** | 5 min | >25% – 35%+ | 1x 8-Channel Gateway | ❌ **RF Saturation**. Pure ALOHA channel degradation. | N/A (Packets lost in RF) |
 | **Multi-Gateway Cluster Scale** | **10,000 to 40,000+** | 5m / 15m | <5% | 4 to 10x Gateways | 🚀 **Full Super6C Potential**. Massive cluster headroom. | **~2.5 to 30+ Years** |
 
@@ -246,5 +246,5 @@ A fleet of 4,000 sensors generates:
    * **Actionability Principle**: A 15-minute transmission cadence represents industry best practice whenever physical parameter change rates are not operationally actionable below 5 minutes. In environmental sensing, viticulture, and agricultural telemetry, root-zone matric water potential and canopy temperature shift gradually over hours; sub-5-minute sampling adds zero agronomic decision value while congesting the RF spectrum.
    * Selecting the **optional 15-minute transmission cadence** reduces RF channel occupancy by 3×, cuts sensor battery drain by ~66%, and allows a **single 8-channel gateway to support 4,000+ sensors** with <5% collision rates.
 4. **Gateway Scaling Path**:
-   * For **up to 2,000–2,500 sensors (5-min cadence)** or **up to 4,500 sensors (15-min cadence)**: A single 8-channel gateway provides rock-solid, production-grade reliability (<8% packet collision rate).
+   * For **up to 2,000–2,500 sensors (5-min cadence)** or **up to 4,500 sensors (15-min cadence)**: A single 8-channel gateway provides exceptional, high-availability reliability (<8% packet collision rate).
    * For **larger fleets or high-density deployments**: The Super6C cluster handles the ingestion seamlessly (<4% CPU draw). To keep RF packet collisions under 5% at 5-minute intervals for 4,000+ nodes, deploy a **second 8-channel outdoor gateway** ($300–$400) connected via Wi-Fi or Ethernet. ChirpStack v4 automatically handles frame deduplication across all gateways with zero configuration overhead.
